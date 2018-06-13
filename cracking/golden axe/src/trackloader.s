@@ -17,16 +17,29 @@ trackloader
 .ready	btst.b	#5,(a4)		; wait disk ready
 	bne.b	.ready		;
 
+	;---- load file table
+
+
+	bclr.b	#2,$100(a5)	; change head
+	jsr	track0(pc)	;
+	move.w	#79,d7		;
+	jsr	move(pc)	;
+	jsr	load(pc)	;
+
+	lea	buffer+5120(pc),a0
+	lea	filetable(pc),a1
+	move.w	#52-1,d7
+.copyft	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	dbf	d7,.copyft
+
 	;----
 	
-	bset.b	#2,$100(a5)	; change head
-	
-	jsr	track0(pc)
-
-	move.w	#1,d7
-	jsr	move(pc)
-
-	jsr	load(pc)
+	;bclr.b	#2,$100(a5)	; change head
+	;jsr	track0(pc)
+	;move.w	#2,d7
+	;jsr	move(pc)
+	;jsr	load(pc)
 
 	;----
 
@@ -134,14 +147,22 @@ load	moveq	#retry,d7
 	beq.b	.loop1		;
 
 	;----
-
-	move.w	4(a0),d0	; decode block index
+ 
+	movem.w	4(a0),d0-d2	; decode block informations
+				;
 	REPT	8		;
 	lsl.w	#1,d0		;
 	lsl.l	#1,d0		;
+	lsl.w	#1,d1		;
+	lsl.l	#1,d1		;
+	lsl.w	#1,d2		;
+	lsl.l	#1,d2		;
 	ENDR			;
+				;
 	swap	d0		;
-
+	swap	d1		;
+	swap	d2		;
+				;
 	cmpi.b	#6,d0		;
 	bhi.b	.error		;
 	ext.w	d0		;
@@ -162,7 +183,6 @@ load	moveq	#retry,d7
 	swap	d0		;
 	move.b	d0,(a2)+	;
 	dbf	d7,.loop2	;
-
 	dbf	d6,.loop1	; next block
 
 	;----
@@ -178,9 +198,14 @@ load	moveq	#retry,d7
 	
 	;----
 
+infos	ds.l	3
+
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
 
 buffer	ds.b	1024*6
 k	dc.b	'sebo'
-	
+
+filetable
+	ds.l	2*52
+	dc.b	'sebo'	
