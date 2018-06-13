@@ -1,0 +1,186 @@
+
+	SECTION	trackloader,CODE_C
+	
+	;OPT	P+
+
+	include	startup.s
+
+trackloader
+	lea	$dff000,a6
+	lea	$bfd000,a5	; ciab
+	lea	$bfe001,a4	; ciaa
+
+	move.b	#%11111111,$100(a5)
+	bclr.b	#7,$100(a5)	; motor on
+	bclr.b	#3,$100(a5)	; select df0
+
+.ready	btst.b	#5,(a4)		; wait disk ready
+	bne.b	.ready		;
+
+	;----
+	
+	bset.b	#2,$100(a5)	; change head
+	
+	jsr	track0(pc)
+
+	move.w	#1,d7
+	jsr	move(pc)
+
+	jsr	load(pc)
+
+	;----
+
+	bset.b	#3,$100(a5)	; stop drive
+	bset.b	#7,$100(a5)	;
+	bclr.b	#3,$100(a5)	;
+	bset.b	#3,$100(a5)	;
+	
+	;----
+	
+	rts
+
+	;---- go track 0
+
+track0	btst.b	#4,(a4)		; track 0 ?
+	beq.b	.done		;
+	bset.b	#1,$100(a5)	; change direction
+.loop	bclr.b	#0,$100(a5)	; step pulse
+	nop			;
+	nop			;
+	nop			;
+	nop			;
+	bset.b	#0,$100(a5)	;
+	bsr.b	delay		; delay
+	btst.b	#4,(a4)		;
+	bne.b	.loop		;
+.done	bclr.b	#1,$100(a5)	; change direction
+	bsr.b	delay		;
+	rts			;
+
+	;---- move head
+
+move	subq.w	#1,d7
+	bmi.b	.done
+.loop	bclr.b	#0,$100(a5)	; step pulse
+	nop			;
+	nop			;
+	nop			;
+	nop			;
+	bset.b	#0,$100(a5)	;
+	bsr.b	delay		; delay
+	dbf	d7,.loop	;
+.done	rts			;
+	
+	;---- delay
+
+delay	move.b	#%10000001,$d00(a4)
+	move.b	#%00001000,$e00(a4)
+	move.b	#$22,$400(a4)
+	move.b	#$0c,$500(a4)	; start oneshoot timer
+.wait	btst.b	#0,$d00(a4)
+	beq.b	.wait
+	rts
+
+	;---- load track
+
+wordsync	EQU	$4489
+readtracklen	EQU	$2000
+retry		EQU	4
+index		EQU	0
+decode		EQU	1
+
+load	moveq	#retry,d7
+	move.w	#%1000001000010000,$96(a6)
+
+.retry	lea	rawdata(pc),a0
+	move.l	a0,$20(a6)
+	move.w	#$4000,$24(a6)
+	move.w	#wordsync,$7e(a6)
+	move.w 	#%0000000000000010,$9c(a6)
+	move.w	#%0111111100000000,$9e(a6)
+	move.w	#%1001010100000000,$9e(a6)
+
+	IFNE	index
+	
+	tst.b	$d00(a5)
+.index	btst.b	#4,$d00(a5)
+	beq.b	.index
+	
+	ENDC
+
+	move.w	#$8000!readtracklen,d0
+	move.w	d0,$24(a6)
+	move.w	d0,$24(a6)
+
+.wait	btst.b	#1,$1f(a6)
+	beq.b	.wait
+
+	move.w	#$4000,$24(a6)
+	
+	IFEQ	decode
+	
+	rts
+	
+	ENDC
+
+	;---- Golden Axe track decoder
+
+.decode	lea	buffer,a1	;
+	moveq	#6-1,d6		; 6 blocks
+
+.loop1	cmpi.w	#wordsync,(a0)+	; sync
+	bne.b	.loop1		;
+	cmpi.w	#wordsync,(a0)	;
+	beq.b	.loop1		;
+
+	;----
+
+	move.w	4(a0),d0	; decode block index
+	REPT	8		;
+	lsl.w	#1,d0		;
+	lsl.l	#1,d0		;
+	ENDR			;
+	swap	d0		;
+
+	cmpi.b	#6,d0		;
+	bhi.b	.error		;
+	ext.w	d0		;
+	subq.w	#1,d0		;
+	mulu.w	#1024,d0	;
+
+	;----
+
+	lea	10(a0),a0	; skip block header
+	lea	(a1,d0.l),a2	;
+	move.w	#1024-1,d7	;
+				;
+.loop2	move.w	(a0)+,d0	;
+	REPT	8		;
+	lsl.w	#1,d0		;
+	lsl.l	#1,d0		;
+	ENDR 			;
+	swap	d0		;
+	move.b	d0,(a2)+	;
+	dbf	d7,.loop2	;
+
+	dbf	d6,.loop1	; next block
+
+	;----
+
+	rts
+
+.error	subq.w	#1,d7		; retry dma transfert
+	bpl.w	.retry		;
+	move.w	#$7fff,$96(a6)	;
+	move.w	#$7fff,$9a(a6)	;
+.die	move.w	$6(a6),$180(a6)	;
+	bra.b	.die		; load error => die.
+	
+	;----
+
+rawdata	ds.w	readtracklen
+	dc.b	'sebo'
+
+buffer	ds.b	1024*6
+k	dc.b	'sebo'
+	
