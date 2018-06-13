@@ -19,7 +19,6 @@ trackloader
 
 	;---- load file table
 
-
 	bclr.b	#2,$100(a5)	; change head
 	jsr	track0(pc)	;
 	move.w	#79,d7		;
