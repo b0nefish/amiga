@@ -17,18 +17,26 @@ trackloader
 .ready	btst.b	#5,(a4)		; wait disk ready
 	bne.b	.ready		;
 
+	;---- custom read
+
+	jsr	track0(pc)
+	bset.b	#2,$100(a5)
+	moveq	#1,d7
+	jsr	move(pc)
+	jsr	load(pc)
+
 	;---- load file table
 
-	lea	filetable(pc),a0
-	moveq	#0,d0
-	jsr	loadfile(pc)
+	;lea	filetable(pc),a0
+	;moveq	#0,d0
+	;jsr	loadfile(pc)
 
 	;----
 	
-	lea	target(pc),a0
-	move.w	#$23,d0
-	jsr	loadfile(pc)
-	move.l	d0,length
+	;lea	target(pc),a0
+	;move.w	#$23,d0
+	;jsr	loadfile(pc)
+	;move.l	d0,length
 
 	;----
 
