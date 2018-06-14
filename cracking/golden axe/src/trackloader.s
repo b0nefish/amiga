@@ -19,30 +19,15 @@ trackloader
 
 	;---- load file table
 
-	bclr.b	#2,$100(a5)	; change head
-	jsr	track0(pc)	;
-	move.w	#79,d7		;
-	jsr	move(pc)	;
-	jsr	load(pc)	;
-
-	lea	buffer+5120(pc),a0
-	lea	filetable(pc),a1
-	move.w	#52-1,d7
-.copy	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	dbf	d7,.copy
+	lea	filetable(pc),a0
+	moveq	#0,d0
+	jsr	loadfile(pc)
 
 	;----
 	
 	lea	target(pc),a0
 	move.w	#$27,d0
 	jsr	loadfile(pc)
-
-	;bset.b	#2,$100(a5)	; change head
-	;jsr	track0(pc)
-	;move.w	#1,d7
-	;jsr	move(pc)
-	;jsr	load(pc)
 
 	;----
 
@@ -62,22 +47,22 @@ trackloader
 loadfile
 	lea	filetable(pc),a1
 	lsl.w	#3,d0
-	lea	(a1,d0.w),a1
-	movem.l	(a1),d0/d1	; d0 = disk offset ; d1 = file length
-	divu.w	#6*1024*2,d0
-	move.w	d0,d7
-	swap	d0
-	bset.b	#2,$100(a5)
-	cmpi.w	#6*1024,d0
-	blt.b	.read
-	bchg.b	#2,$100(a5)
-.read	jsr	track0(pc)
-	jsr	move(pc)
-	jsr	load(pc)
+	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
+	divu.w	#6*1024,d0	;
+	move.w	d0,d7		;
+	lsr.w	#1,d7		;
+	bset.b	#2,$100(a5)	; fix head
+	andi.w	#1,d0		; side ?
+	beq.b	.read		;
+	bchg.b	#2,$100(a5)	;
+.read	swap	d0		;
+	jsr	track0(pc)	;
+	jsr	move(pc)	;
+	jsr	load(pc)	;
 
 .copy	lea	buffer(pc),a1	;
 	lea	(a1,d0.w),a1	;
-	move.w	#1024*6,d7	;
+	move.w	#6*1024,d7	;
 	sub.w	d0,d7		;
 	subq.w	#1,d7		;
 .loop	move.b	(a1)+,(a0)+	; copy byte
@@ -270,8 +255,9 @@ buffer	ds.b	1024*6
 k	dc.b	'sebo'
 
 filetable
-	ds.l	2*52
+	dc.l	$efc00,$198	; file table location
+	ds.b	$198-8		;
 	dc.b	'sebo'
 
-target	ds.b	$2db3
+target	ds.b	$15000
 	dc.b	'sebo'	
