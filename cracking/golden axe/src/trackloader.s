@@ -28,15 +28,19 @@ trackloader
 	lea	buffer+5120(pc),a0
 	lea	filetable(pc),a1
 	move.w	#52-1,d7
-.copyft	move.l	(a0)+,(a1)+
+.copy	move.l	(a0)+,(a1)+
 	move.l	(a0)+,(a1)+
-	dbf	d7,.copyft
+	dbf	d7,.copy
 
 	;----
 	
-	;bclr.b	#2,$100(a5)	; change head
+	lea	target(pc),a0
+	move.w	#$27,d0
+	jsr	loadfile(pc)
+
+	;bset.b	#2,$100(a5)	; change head
 	;jsr	track0(pc)
-	;move.w	#2,d7
+	;move.w	#1,d7
 	;jsr	move(pc)
 	;jsr	load(pc)
 
@@ -49,6 +53,47 @@ trackloader
 	
 	;----
 	
+	rts
+
+	;---- golden axe file loader
+	; a0 = target ptr
+	; d0 = file index
+
+loadfile
+	lea	filetable(pc),a1
+	lsl.w	#3,d0
+	lea	(a1,d0.w),a1
+	movem.l	(a1),d0/d1	; d0 = disk offset ; d1 = file length
+	divu.w	#6*1024*2,d0
+	move.w	d0,d7
+	swap	d0
+	bset.b	#2,$100(a5)
+	cmpi.w	#6*1024,d0
+	blt.b	.read
+	bchg.b	#2,$100(a5)
+.read	jsr	track0(pc)
+	jsr	move(pc)
+	jsr	load(pc)
+
+.copy	lea	buffer(pc),a1	;
+	lea	(a1,d0.w),a1	;
+	move.w	#1024*6,d7	;
+	sub.w	d0,d7		;
+	subq.w	#1,d7		;
+.loop	move.b	(a1)+,(a0)+	; copy byte
+	subq.l	#1,d1		; decrease length
+	dble	d7,.loop	;
+
+	tst.l	d1		; enought data ?
+	beq.b	.done		; yep => done
+	
+	jsr	next(pc)	; nop => go next track
+	jsr	load(pc)	; load it
+
+	moveq	#0,d0		; zero copy offset
+	bra.b	.copy		; goto to copy loop
+
+.done	move.l	d1,size
 	rts
 
 	;---- go track 0
@@ -82,6 +127,20 @@ move	subq.w	#1,d7
 	bsr.b	delay		; delay
 	dbf	d7,.loop	;
 .done	rts			;
+
+	;---- next track
+
+next	btst.b	#2,$100(a5)	;
+	bne.b	.done		;
+.step	bclr.b	#0,$100(a5)	; step pulse
+	nop			;
+	nop			;
+	nop			;
+	nop			;
+	bset.b	#0,$100(a5)	;
+.done	bchg.b	#2,$100(a5)	;
+	bsr.b	delay		; delay
+	rts
 	
 	;---- delay
 
@@ -101,7 +160,8 @@ retry		EQU	4
 index		EQU	0
 decode		EQU	1
 
-load	moveq	#retry,d7
+load	movem.l	d0-a3,-(sp)
+	moveq	#retry,d7
 	move.w	#%1000001000010000,$96(a6)
 
 .retry	lea	rawdata(pc),a0
@@ -186,6 +246,7 @@ load	moveq	#retry,d7
 
 	;----
 
+	movem.l	(sp)+,d0-a3
 	rts
 
 .error	subq.w	#1,d7		; retry dma transfert
@@ -197,6 +258,9 @@ load	moveq	#retry,d7
 	
 	;----
 
+x	ds.l	1
+size	ds.l	1
+
 infos	ds.l	3
 
 rawdata	ds.w	readtracklen
@@ -207,4 +271,7 @@ k	dc.b	'sebo'
 
 filetable
 	ds.l	2*52
+	dc.b	'sebo'
+
+target	ds.b	$2db3
 	dc.b	'sebo'	
