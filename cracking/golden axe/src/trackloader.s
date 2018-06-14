@@ -26,8 +26,9 @@ trackloader
 	;----
 	
 	lea	target(pc),a0
-	move.w	#$27,d0
+	move.w	#$23,d0
 	jsr	loadfile(pc)
+	move.l	d0,length
 
 	;----
 
@@ -48,6 +49,8 @@ loadfile
 	lea	filetable(pc),a1
 	lsl.w	#3,d0
 	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
+	move.l	d1,d6		;
+	ble.b	.done		;
 	divu.w	#6*1024,d0	;
 	move.w	d0,d7		;
 	lsr.w	#1,d7		;
@@ -74,11 +77,10 @@ loadfile
 	
 	jsr	next(pc)	; nop => go next track
 	jsr	load(pc)	; load it
-
 	moveq	#0,d0		; zero copy offset
 	bra.b	.copy		; goto to copy loop
 
-.done	move.l	d1,size
+.done	move.l	d6,d0		; return file length in d0
 	rts
 
 	;---- go track 0
@@ -243,8 +245,7 @@ load	movem.l	d0-a3,-(sp)
 	
 	;----
 
-x	ds.l	1
-size	ds.l	1
+length	ds.l	1
 
 infos	ds.l	3
 
