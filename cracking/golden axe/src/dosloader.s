@@ -14,7 +14,7 @@
 	;----
 	
 	lea	target(pc),a0
-	move.w	#0,d0
+	move.w	#$27,d0
 	jsr	loadfile(pc)
 	rts
 
@@ -139,13 +139,13 @@ next	btst.b	#2,$100(a5)	;
 	bsr.b	delay		; delay
 	rts
 	
-	;---- delay
+	;---- delay (ciaa timer b)
 
-delay	move.b	#%10000001,$d00(a4)
-	move.b	#%00001000,$e00(a4)
-	move.b	#$22,$400(a4)
-	move.b	#$0c,$500(a4)	; start oneshoot timer
-.wait	btst.b	#0,$d00(a4)
+delay	move.b	#%10000010,$d00(a4)
+	move.b	#%00001000,$f00(a4)
+	move.b	#$22,$600(a4)
+	move.b	#$0c,$700(a4)	; start oneshoot timer
+.wait	btst.b	#1,$d00(a4)
 	beq.b	.wait
 	rts
 
@@ -171,7 +171,7 @@ load	movem.l	d0-a3,-(sp)
 	move.w	#%0111111100000000,$9e(a6)
 	move.w	#%1001010100000000,$9e(a6)
 	move.w	#$8000!readtracklen,d0
-	move.w	d0,$24(a6)	; game dma-disk buffer has 6247 words
+	move.w	d0,$24(a6)	; read 6247 dma words
 	move.w	d0,$24(a6)	;
 
 .wait	btst.b	#1,$1f(a6)
@@ -244,20 +244,15 @@ mask	EQU	$55555555
 
 	;---- datas
 
-rawptr1	dc.l	$68414		; first trackloader raw buffer
+filetable
+	include	filetable.s
 
-length	ds.l	1
+end	;----
 
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
 
 buffer	ds.b	512*11
-	dc.b	'sebo'
-
-filetable
-	dc.l	$dbfb0,16	;
-	dc.l	$efc00,$198	; file table location
-	ds.b	$198-8		;
 	dc.b	'sebo'
 
 target	ds.b	$15000
