@@ -3,6 +3,8 @@
 	
 	;OPT	P+
 
+FINAL	EQU	0
+
 	include	startup.s
 
 trackloader
@@ -147,15 +149,18 @@ delay	move.b	#%10000001,$d00(a4)
 	;---- load track
 
 wordsync	EQU	$4489
-gap		EQU	350
+gap		EQU	263
 readtracklen	EQU	((1088*11)/2)+gap
-retry		EQU	4
+retry		EQU	10
 
 load	movem.l	d0-a3,-(sp)
 	moveq	#retry,d7
 	move.w	#%1000001000010000,$96(a6)
 
 .retry	lea	rawdata(pc),a0
+	;move.l	$4466e,a0	; <- first loader
+	;move.l	$0ea68,a0	; <- second loader
+	;lea	$414(a0),a0	;	
 	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
@@ -163,8 +168,8 @@ load	movem.l	d0-a3,-(sp)
 	move.w	#%0111111100000000,$9e(a6)
 	move.w	#%1001010100000000,$9e(a6)
 	move.w	#$8000!readtracklen,d0
-	move.w	d0,$24(a6)
-	move.w	d0,$24(a6)
+	move.w	d0,$24(a6)	; game dma-disk buffer has 6247 words
+	move.w	d0,$24(a6)	;
 
 .wait	btst.b	#1,$1f(a6)
 	beq.b	.wait
@@ -234,6 +239,8 @@ mask	EQU	$55555555
 	bra.b	.die		; load error => die.
 
 	;---- datas
+
+rawptr1	dc.l	$68414		; first trackloader raw buffer
 
 length	ds.l	1
 
