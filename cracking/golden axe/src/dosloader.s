@@ -3,21 +3,7 @@
 	
 	;OPT	P+
 
-FINAL	EQU	0
-
 	include	startup.s
-
-trackloader
-	lea	$dff000,a6
-	lea	$bfd000,a5	; ciab
-	lea	$bfe001,a4	; ciaa
-
-	move.b	#%11111111,$100(a5)
-	bclr.b	#7,$100(a5)	; motor on
-	bclr.b	#3,$100(a5)	; select df0
-
-.ready	btst.b	#5,(a4)		; wait disk ready
-	bne.b	.ready		;
 
 	;---- load file table
 
@@ -30,34 +16,41 @@ trackloader
 	lea	target(pc),a0
 	move.w	#0,d0
 	jsr	loadfile(pc)
-	move.l	d0,length
-
-	;----
-
-	bset.b	#3,$100(a5)	; stop drive
-	bset.b	#7,$100(a5)	;
-	bclr.b	#3,$100(a5)	;
-	bset.b	#3,$100(a5)	;
-	
-	;----
-	
 	rts
 
 	;---- 
-	; Golden-Axe
+	; Golden-Axe 
+	;
 	; AmigaDOS File Loader
 	;
 	; a0 = target ptr
 	; d0 = file index
 
 loadfile
+	movem.l	d0-a6,-(sp)
+
+	lea	$dff000,a6
+	lea	$bfd000,a5	; ciab
+	lea	$bfe001,a4	; ciaa
+
+	move.b	#%11111111,$100(a5)
+	bclr.b	#7,$100(a5)	; motor on
+	bclr.b	#3,$100(a5)	; select df0
+
+.ready	btst.b	#5,(a4)		; wait disk ready
+	bne.b	.ready		;
+
+	;----
+
 	lea	filetable(pc),a1
 	lsl.w	#3,d0
-	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
-	move.l	d1,d6		;
-	ble.b	.done		;
+	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length
+	
 	cmpi.l	#(512*11*2*80)-1,d0
 	bgt.b	.done		;
+	tst.l	d1		;
+	ble.b	.done		;
+	
 	divu.w	#512*11,d0	;
 	move.w	d0,d7		;
 	lsr.w	#1,d7		; 
@@ -71,6 +64,7 @@ loadfile
 	jsr	load(pc)	;
 
 .copy	lea	buffer(pc),a1	;
+	;lea	$c00000,a1	;
 	lea	(a1,d0.w),a1	;
 	move.w	#512*11,d7	;
 	sub.w	d0,d7		;
@@ -87,8 +81,17 @@ loadfile
 	moveq	#0,d0		; zero copy offset
 	bra.b	.copy		; goto to copy loop
 
-.done	move.l	d6,d0		; return file length in d0
-	rts
+	;----
+
+.done	bset.b	#3,$100(a5)	; stop drive
+	bset.b	#7,$100(a5)	;
+	bclr.b	#3,$100(a5)	;
+	bset.b	#3,$100(a5)	;
+
+	;----
+
+	movem.l	(sp)+,d0-a6	;
+	rts			; quit loader
 
 	;---- go track 0
 
@@ -181,6 +184,7 @@ load	movem.l	d0-a3,-(sp)
 mask	EQU	$55555555
 
 .decode	lea	buffer,a1	;
+	;lea	$c00000,a1	;
 	moveq	#11-1,d6	;
 	move.l	#mask,d0	;
 
