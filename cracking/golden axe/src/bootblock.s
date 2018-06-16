@@ -11,7 +11,7 @@ check	lea 	boot(pc),a0
 	move.l	d0,4(a1)
         rts
 
-	;----
+	;---- Golden-Axe disk 1 bootblock
 
 boot	dc.b	'DOS',0
 	ds.l	1
@@ -25,23 +25,14 @@ boot	dc.b	'DOS',0
 	move.l	#(512*11*2),$2c(a1)
 	
 	move.l	4.w,a6
-	jsr	-456(a6)	; doio
-	
-	;---- take system
-	
+	jsr	-456(a6)	; doio	
 	jsr	-132(a6)	; forbid
 	jsr	-120(a6)	; disable
 	jsr	-150(a6)	; superstat
 
 	;----
 
-	lea	$dff000,a6
-	move.w	#$7fff,$9a(a6)
-	move.w	#$7fff,$96(a6)
-	move.w	#$7,$180(a6)
-
-	lea	$400,sp
-	jmp	$43400
+	jmp	$43400		; launch game
 
 	;----
 

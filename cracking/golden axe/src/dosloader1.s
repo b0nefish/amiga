@@ -5,12 +5,6 @@
 
 	include	startup.s
 
-	;---- load file table
-
-	;lea	filetable(pc),a0
-	;moveq	#0,d0
-	;jsr	loadfile(pc)
-
 	;----
 	
 	lea	target(pc),a0
@@ -154,16 +148,13 @@ delay	move.b	#%10000010,$d00(a4)
 wordsync	EQU	$4489
 gap		EQU	263
 readtracklen	EQU	((1088*11)/2)+gap
-retry		EQU	10
 
 load	movem.l	d0-a3,-(sp)
-	moveq	#retry,d7
 	move.w	#%1000001000010000,$96(a6)
 
 .retry	lea	rawdata(pc),a0
-	;move.l	$4466e,a0	; <- first loader
-	;move.l	$0ea68,a0	; <- second loader
-	;lea	$414(a0),a0	;	
+	;move.l	$4466e,a0
+	;lea	$414(a0),a0	
 	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
@@ -200,7 +191,7 @@ mask	EQU	$55555555
 	eor.l	d2,d1		;
 	ENDR			;
 	and.l	d0,d1		;
-	bne.b	.error		; correct header checksum ?
+	bne.w	.retry		; correct header checksum ?
 
 	movem.l	(a0),d1/d2	; decode sector header
 	and.l	d0,d1		; information
@@ -227,7 +218,7 @@ mask	EQU	$55555555
 	move.l	d3,(a2)+	; save decoded data
 	dbf	d5,.loop2	;
 	and.l	d0,d2		;
-	bne.b	.error		; correct sector checksum ?
+	bne.w	.retry		; correct sector checksum ?
 	dbf	d6,.loop1	; next sector
 	
 	movem.l	(sp)+,d0-a3	;
@@ -235,12 +226,8 @@ mask	EQU	$55555555
 
 	;----
 
-.error	subq.w	#1,d7		; retry dma transfert
-	bpl.w	.retry		;
-	move.w	#$7fff,$96(a6)	;
-	move.w	#$7fff,$9a(a6)	;
-.die	move.w	$6(a6),$180(a6)	;
-	bra.b	.die		; load error => die.
+_4436a	ds.b	($4436a-$4406a)-(_4436a-loadfile)
+	rts
 
 	;---- datas
 
@@ -251,6 +238,8 @@ end	;----
 
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
+
+	SECTION	DATA_F
 
 buffer	ds.b	512*11
 	dc.b	'sebo'
