@@ -1,16 +1,16 @@
 
 	SECTION	trackloader,CODE_C
 	
-	;OPT	P+
+	OPT	P+
 
-	include	startup.s
+	;include	startup.s
 
 	;----
 	
-	lea	target(pc),a0
-	move.w	#$27,d0
-	jsr	loadfile(pc)
-	rts
+	;lea	target(pc),a0
+	;move.w	#$23,d0
+	;jsr	loadfile(pc)
+	;rts
 
 	;---- 
 	; Golden-Axe 
@@ -26,6 +26,8 @@ loadfile
 	lea	$dff000,a6
 	lea	$bfd000,a5	; ciab
 	lea	$bfe001,a4	; ciaa
+
+	;----
 
 	move.b	#%11111111,$100(a5)
 	bclr.b	#7,$100(a5)	; motor on
@@ -57,8 +59,8 @@ loadfile
 	jsr	move(pc)	;
 	jsr	load(pc)	;
 
-.copy	lea	buffer(pc),a1	;
-	;lea	$c00000,a1	;
+.copy	;lea	buffer(pc),a1	;
+	lea	$c00000,a1	;
 	lea	(a1,d0.w),a1	;
 	move.w	#512*11,d7	;
 	sub.w	d0,d7		;
@@ -146,15 +148,15 @@ delay	move.b	#%10000010,$d00(a4)
 	;---- load track
 
 wordsync	EQU	$4489
-gap		EQU	263
+gap		EQU	0
 readtracklen	EQU	((1088*11)/2)+gap
 
 load	movem.l	d0-a3,-(sp)
 	move.w	#%1000001000010000,$96(a6)
 
-.retry	lea	rawdata(pc),a0
-	;move.l	$4466e,a0
-	;lea	$414(a0),a0	
+.retry	;lea	rawdata(pc),a0
+	move.l	$4466e,a0
+	lea	$414(a0),a0	
 	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
@@ -174,8 +176,8 @@ load	movem.l	d0-a3,-(sp)
 	
 mask	EQU	$55555555
 
-.decode	lea	buffer,a1	;
-	;lea	$c00000,a1	;
+.decode	;lea	buffer,a1	;
+	lea	$c00000,a1	;
 	moveq	#11-1,d6	;
 	move.l	#mask,d0	;
 
@@ -229,20 +231,19 @@ mask	EQU	$55555555
 _4436a	ds.b	($4436a-$4406a)-(_4436a-loadfile)
 	rts
 
-	;---- datas
-
 filetable
 	include	filetable.s
 
-end	;----
+_44570	ds.b	($44570-$4406a)-(_44570-loadfile)
+	rts
 
-rawdata	ds.w	readtracklen
-	dc.b	'sebo'
+end	;---- datas
 
-	SECTION	DATA_F
+;rawdata	ds.w	readtracklen
+;	dc.b	'sebo'
 
-buffer	ds.b	512*11
-	dc.b	'sebo'
+;buffer	ds.b	512*11
+;	dc.b	'sebo'
 
-target	ds.b	$15000
-	dc.b	'sebo'	
+;target	ds.b	$15000
+;	dc.b	'sebo'	
