@@ -62,10 +62,11 @@ loadfile
 .copy	;lea	buffer(pc),a1	;
 	lea	$c00000,a1	;
 	lea	(a1,d0.w),a1	;
+	lea	$c20000,a2	;
 	move.w	#512*11,d7	;
 	sub.w	d0,d7		;
 	subq.w	#1,d7		;
-.loop	move.b	(a1)+,(a0)+	; copy byte
+.loop	move.b	(a1)+,(a2)+	; copy byte
 	subq.l	#1,d1		; decrease length
 	dble	d7,.loop	;
 
@@ -83,6 +84,12 @@ loadfile
 	bset.b	#7,$100(a5)	;
 	bclr.b	#3,$100(a5)	;
 	bset.b	#3,$100(a5)	;
+
+	;----
+
+	move.l	a0,a1		;
+	lea	$c20000,a0	;
+	jsr	decrunch(pc)	;
 
 	;----
 
@@ -225,6 +232,11 @@ mask	EQU	$55555555
 	
 	movem.l	(sp)+,d0-a3	;
 	rts			;
+
+	;----
+
+decrunch
+	include	bytekiller.s
 
 	;----
 
