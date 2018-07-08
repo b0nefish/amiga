@@ -14,6 +14,10 @@ info	lea	table(pc),a0
 	dbf	d0,.loop
 
 	move.l	d1,size
+
+	move.l	#512*11*2*80,d0
+	sub.l	d0,d1
+	move.l	d0,over
 	rts
 
 	;----
@@ -21,8 +25,8 @@ info	lea	table(pc),a0
 filecount
 	ds.w	1
 
-size
-	ds.l	1
+size	ds.l	1
+over	ds.l	1
 
 	;----
 
