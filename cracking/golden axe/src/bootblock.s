@@ -22,7 +22,7 @@ boot	dc.b	'DOS',0
 	move.w	#2,$1c(a1)
 	move.l	#1024*6,$24(a1)
 	move.l	#$43400,$28(a1)
-	move.l	#(512*11*2),$2c(a1)
+	move.l	#512*2,$2c(a1)
 	
 	move.l	4.w,a6
 	jsr	-456(a6)	; doio	
@@ -32,7 +32,7 @@ boot	dc.b	'DOS',0
 
 	;----
 
-	jmp	$43400		; launch game
+	jmp	$43400		; bootstrap golden axe
 
 	;----
 
