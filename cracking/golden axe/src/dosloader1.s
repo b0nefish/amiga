@@ -7,7 +7,7 @@
 
 	;----
 	
-	;lea	target(pc),a0
+	;lea	target,a0
 	;move.w	#$23,d0
 	;jsr	loadfile(pc)
 	;rts
@@ -40,13 +40,16 @@ loadfile
 
 	lea	filetable(pc),a1
 	lsl.w	#3,d0
-	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length
-	
+	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
 	cmpi.l	#(512*11*2*80)-1,d0
 	bgt.b	.done		;
 	tst.l	d1		;
 	ble.b	.done		;
-	
+
+	lea	$c40000,a1	;
+	;lea	decrnch,a1	;
+	move.l	a1,a2		;
+
 	divu.w	#512*11,d0	;
 	move.w	d0,d7		;
 	lsr.w	#1,d7		; 
@@ -59,24 +62,28 @@ loadfile
 	jsr	move(pc)	;
 	jsr	load(pc)	;
 
-.copy	;lea	buffer(pc),a1	;
-	lea	$c00000,a1	;
-	lea	(a1,d0.w),a1	;
-	lea	$c20000,a2	;
+.copy	;lea	decode,a3	;
+	lea	$c00000,a3	;
+	lea	(a3,d0.w),a3	;
 	move.w	#512*11,d7	;
 	sub.w	d0,d7		;
 	subq.w	#1,d7		;
-.loop	move.b	(a1)+,(a2)+	; copy byte
+.loop	move.b	(a3)+,(a2)+	; copy byte
 	subq.l	#1,d1		; decrease length
 	dble	d7,.loop	;
 
 	tst.l	d1		; enought data ?
-	beq.b	.done		; yep => done
+	beq.b	.depack		; yep => depack
 	
 	jsr	next(pc)	; nop => go next track
 	jsr	load(pc)	; load it
 	moveq	#0,d0		; zero copy offset
 	bra.b	.copy		; goto to copy loop
+
+	;---- depack
+
+.depack	exg	a0,a1		;
+	jsr	decrunch(pc)	;
 
 	;----
 
@@ -84,12 +91,6 @@ loadfile
 	bset.b	#7,$100(a5)	;
 	bclr.b	#3,$100(a5)	;
 	bset.b	#3,$100(a5)	;
-
-	;----
-
-	move.l	a0,a1		;
-	lea	$c20000,a0	;
-	jsr	decrunch(pc)	;
 
 	;----
 
@@ -161,7 +162,7 @@ readtracklen	EQU	((1088*11)/2)+gap
 load	movem.l	d0-a3,-(sp)
 	move.w	#%1000001000010000,$96(a6)
 
-.retry	;lea	rawdata(pc),a0
+.retry	;lea	rawdata,a0
 	move.l	$4466e,a0
 	lea	$414(a0),a0	
 	move.l	a0,$20(a6)
@@ -183,7 +184,7 @@ load	movem.l	d0-a3,-(sp)
 	
 mask	EQU	$55555555
 
-.decode	;lea	buffer,a1	;
+.decode	;lea	decode,a1	;
 	lea	$c00000,a1	;
 	moveq	#11-1,d6	;
 	move.l	#mask,d0	;
@@ -254,7 +255,10 @@ end	;---- datas
 ;rawdata	ds.w	readtracklen
 ;	dc.b	'sebo'
 
-;buffer	ds.b	512*11
+;decode	ds.b	512*11
+;	dc.b	'sebo'
+
+;decrnch	ds.b	$15000
 ;	dc.b	'sebo'
 
 ;target	ds.b	$15000

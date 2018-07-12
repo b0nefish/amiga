@@ -11,7 +11,7 @@ check	lea 	boot(pc),a0
 	move.l	d0,4(a1)
         rts
 
-	;---- Golden-Axe disk 1 bootblock
+	;---- Golden-Axe bootblock
 
 boot	dc.b	'DOS',0
 	ds.l	1
