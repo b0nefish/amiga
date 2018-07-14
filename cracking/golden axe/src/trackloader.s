@@ -27,14 +27,14 @@ trackloader
 
 	;---- load file table
 
-	lea	filetable(pc),a0
-	moveq	#0,d0
-	jsr	loadfile(pc)
+	;lea	filetable(pc),a0
+	;moveq	#0,d0
+	;jsr	loadfile(pc)
 
 	;----
 	
-	lea	target(pc),a0
-	move.w	#$31,d0
+	lea	target,a0
+	moveq	#0,d0
 	jsr	loadfile(pc)
 	move.l	d0,length
 
@@ -54,7 +54,8 @@ trackloader
 	; d0 = file index
 
 loadfile
-	lea	filetable(pc),a1
+	;lea	filetable(pc),a1
+	lea	riptable(pc),a1
 	lsl.w	#3,d0
 	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
 	move.l	d1,d6		;
@@ -268,5 +269,12 @@ filetable
 	ds.b	$198-8		;
 	dc.b	'sebo'
 
-target	ds.b	$15000
-	dc.b	'sebo'	
+riptable
+	; #0 rip length = $3d033 (249907) => files $1 to $15
+	dc.l	$3000,$3ba07+$462c-$3000
+
+	SECTION	DATA_F
+
+target	ds.b	249907
+end	dc.b	'sebo'
+	
