@@ -1,6 +1,6 @@
 	; Golden Axe file table
 
-	dc.l	0,0		; $00
+	;dc.l	0,0		; $00
 	dc.l	0,$1272		; $01	
 	dc.l	0,$2546		; $02
 	dc.l	0,$2d9c		; $03

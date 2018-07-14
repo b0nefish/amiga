@@ -39,7 +39,8 @@ loadfile
 	;----
 
 	lea	filetable(pc),a1
-	lsl.w	#3,d0
+	subq.w	#1,d0		;
+	lsl.w	#3,d0		;
 	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
 	cmpi.l	#(512*11*2*80)-1,d0
 	bgt.b	.done		;
