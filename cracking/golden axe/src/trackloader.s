@@ -34,7 +34,7 @@ trackloader
 	;----
 	
 	lea	target,a0
-	moveq	#2,d0
+	moveq	#3,d0
 	jsr	loadfile(pc)
 	move.l	d0,length
 
@@ -279,8 +279,11 @@ riptable
 	; #2 rip length = $3545d (218205) => files $28 to $30  
 	dc.l	$abe0a,$d5985+$b8e2-$abe0a
 
+	; #3 rip length = $14a0b (84491) => files $24 to $26  
+	dc.l	$946c4,$a25e8+$6ae7-$946c4
+
 	SECTION	DATA_F
 
-target	ds.b	218205
+target	ds.b	84491
 end	dc.b	'sebo'
 	
