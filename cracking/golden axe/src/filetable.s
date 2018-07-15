@@ -1,58 +1,160 @@
 	; Golden Axe file look up table
 
-offset	SET	$eb7e
+offset	SET	$eb7e		; <= disk base offset
+
+	;----
 
 	;dc.l	0,0		; $00
-	dc.l	0,$1272		; $01	
-	dc.l	0,$2546		; $02
-	dc.l	0,$2d9c		; $03
-	dc.l	0,$17f8		; $04
-	dc.l	0,$1830		; $05
-	dc.l	0,$16b2		; $06
-	dc.l	0,$28d9		; $07
-	dc.l	0,$5641		; $08
-	dc.l	0,$3f27		; $09
-	dc.l	0,$591a		; $0a
-	dc.l	0,$da8		; $0b
-	dc.l	0,$da8		; $0c
-	dc.l	0,$da8		; $0d
-	dc.l	0,$da8		; $0e
-	dc.l	0,$da8		; $0f
 
-	dc.l	0,$da8		; $10	
-	dc.l	0,$63db		; $11 
-	dc.l	0,$5e73		;
-	dc.l	0,$6b49		;
-	dc.l	0,$46f7		;
-	dc.l	0,$462c		;	
-	dc.l	0,$3edc		;
-	dc.l	0,$46ca		;
-	dc.l	0,$2a13		;
-	dc.l	0,$6a40		;
-	dc.l	0,$6e9a		;	
-	dc.l	0,$6b5d		;
-	dc.l	0,$6b13		;
-	dc.l	0,$550f		;
-	dc.l	0,$6b2f		;
-	dc.l	0,$6453		;
+	dc.l	offset,$1272	; $01
+offset	SET	offset+$1272	
 
-	dc.l	0,$48b2				; $20
-	dc.l	0,$38be				; $21
-	dc.l	0,$400f				; $22	
+	dc.l	offset,$2546	; $02
+offset	SET	offset+$2546	
+
+	dc.l	offset,$2d9c	; $03
+offset	SET	offset+$2d9c	
+
+	dc.l	offset,$17f8	; $04
+offset	SET	offset+$17f8	
+
+	dc.l	offset,$1830	; $05
+offset	SET	offset+$1830	
+
+	dc.l	offset,$16b2	; $06
+offset	SET	offset+$16b2	
+
+	dc.l	offset,$28d9	; $07
+offset	SET	offset+$28d9	
+
+	dc.l	offset,$5641	; $08
+offset	SET	offset+$5641	
+
+	dc.l	offset,$3f27	; $09
+offset	SET	offset+$3f27	
+
+	dc.l	offset,$591a	; $0a
+offset	SET	offset+$591a	
+
+	dc.l	offset,$da8	; $0b
+offset	SET	offset+$da8	
+
+	dc.l	offset,$da8	; $0c
+offset	SET	offset+$da8	
+
+	dc.l	offset,$da8	; $0d
+offset	SET	offset+$da8	
+
+	dc.l	offset,$da8	; $0e
+offset	SET	offset+$da8	
+
+	dc.l	offset,$da8	; $0f
+offset	SET	offset+$da8	
+
+	dc.l	offset,$da8	; $10	
+offset	SET	offset+$da8	
+
+	dc.l	offset,$63db	; $11 
+offset	SET	offset+$63db	
+
+	dc.l	offset,$5e73	; $12
+offset	SET	offset+$5e73	
+
+	dc.l	offset,$6b49	; $13
+offset	SET	offset+$6b49	
+
+	dc.l	offset,$46f7	; $14
+offset	SET	offset+$46f7	
+
+	dc.l	offset,$462c	; $15	
+offset	SET	offset+$462c	
+
+	dc.l	offset,$3edc	; $16
+offset	SET	offset+$3edc	
+
+	dc.l	offset,$46ca	; $17
+offset	SET	offset+$46ca	
+
+	dc.l	offset,$2a13	; $18
+offset	SET	offset+$2a13	
+
+	dc.l	offset,$6a40	; $19
+offset	SET	offset+$6a40		
+
+	dc.l	offset,$6e9a	; $1a	
+offset	SET	offset+$6e9a	
+
+	dc.l	offset,$6b5d	; $1b
+offset	SET	offset+$6b5d	
+
+	dc.l	offset,$6b13	; $1c
+offset	SET	offset+$6b13	
+
+	dc.l	offset,$550f	; $1d
+offset	SET	offset+$550f	
+
+	dc.l	offset,$6b2f	; $1e
+offset	SET	offset+$6b2f	
+
+	dc.l	offset,$6453	; $1f
+offset	SET	offset+$6453
+
+	;----	
+
+	dc.l	offset,$48b2	; $20
+offset	SET	offset+$48b2
+
+	dc.l	offset,$38be	; $21
+offset	SET	offset+$38be
+
+	dc.l	offset,$400f	; $22	
+offset	SET	offset+$400f
+
 	dc.l	($400+$1800+$1610+$1070),$94fc	; $23 (loader1 packed)
-	dc.l	0,$7541				; $24
-	dc.l	0,$69e3				; $25
-	dc.l	0,$6ae7				; $26
-	dc.l	($400+$1800),$1610		; $27 (loader1 packed)
-	dc.l	0,$6949				; $28
-	dc.l	0,$45f0				; $29
-	dc.l	0,$34e2				; $2a
-	dc.l	0,$5981				; $2b
-	dc.l	0,$67fc				; $2c
-	dc.l	0,$5f27				; $2d
-	dc.l	0,$5d52				; $2e	
-	dc.l	0,$396a				; $2f
 
-	dc.l	0,$b8e2				; $30
+	dc.l	offset,$7541	; $24
+offset	SET	offset+$7541
+
+
+	dc.l	offset,$69e3	; $25
+offset	SET	offset+$69e3
+
+	dc.l	offset,$6ae7	; $26
+offset	SET	offset+$6ae7
+
+	dc.l	($400+$1800),$1610		; $27 (loader1 packed)
+
+	dc.l	offset,$6949	; $28
+offset	SET	offset+$6949
+
+	dc.l	offset,$45f0	; $29
+offset	SET	offset+$45f0
+
+	dc.l	offset,$34e2	; $2a
+offset	SET	offset+$34e2
+
+	dc.l	offset,$5981	; $2b
+offset	SET	offset+$5981
+
+	dc.l	offset,$67fc	; $2c
+offset	SET	offset+$67fc
+
+	dc.l	offset,$5f27	; $2d
+offset	SET	offset+$5f27
+
+	dc.l	offset,$5d52	; $2e	
+offset	SET	offset+$5d52
+
+	dc.l	offset,$396a	; $2f
+offset	SET	offset+$396a
+
+	;----
+	
+	dc.l	offset,$b8e2	; $30
+offset	SET	offset+$b8e2
+
 	dc.l	($400+$1800+$1610),$1070	; $31 (loader1 packed)
-	dc.l	0,$20d4				; $32
+
+	dc.l	offset,$20d4	; $32
+offset	SET	offset+$20d4
+
