@@ -1,4 +1,6 @@
-	; Golden Axe file table
+	; Golden Axe file look up table
+
+offset	SET	$eb7e
 
 	;dc.l	0,0		; $00
 	dc.l	0,$1272		; $01	
