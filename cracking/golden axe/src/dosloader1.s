@@ -40,6 +40,7 @@ loadfile
 
 	lea	filetable(pc),a1
 	subq.w	#1,d0		;
+	bmi.b	.done		;
 	lsl.w	#3,d0		;
 	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
 	cmpi.l	#(512*11*2*80)-1,d0
@@ -246,7 +247,7 @@ _4436a	ds.b	($4436a-$4406a)-(_4436a-loadfile)
 	rts
 
 filetable
-	include	filetable.s
+	include	filetable.s	; file look up table
 
 _44570	ds.b	($44570-$4406a)-(_44570-loadfile)
 	rts
