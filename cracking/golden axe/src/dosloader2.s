@@ -229,14 +229,21 @@ mask	EQU	$55555555
 
 	;----
 
-;_4436a	ds.b	($4436a-$4406a)-(_4436a-loadfile)
-;	rts
+_e766	ds.b	($e766-$e466)-(_e766-loadfile)
+	rts
+
+_e7da	ds.b	($e7da-$e466)-(_e7da-loadfile)
+	rts
+
+_e90e	ds.b	($e90e-$e466)-(_e90e-loadfile)
+	rts
+
+_e96a	ds.b	($e96a-$e466)-(_e96a-loadfile)
+	rts
 
 filetable
 	include	filetable.s	; file look up table
 
-;_44570	ds.b	($44570-$4406a)-(_44570-loadfile)
-;	rts
 
 end	;---- datas
 
