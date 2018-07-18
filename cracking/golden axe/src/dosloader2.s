@@ -150,7 +150,7 @@ delay	move.b	#%10000010,$d00(a4)
 
 wordsync	EQU	$4489
 gap		EQU	0
-readtracklen	EQU	((1088*11)/2)+gap
+readtracklen	EQU	$9867
 
 load	movem.l	d0-a3,-(sp)
 	move.w	#%1000001000010000,$96(a6)
@@ -232,8 +232,8 @@ mask	EQU	$55555555
 _e766	ds.b	($e766-$e466)-(_e766-loadfile)
 	rts
 
-_e7da	ds.b	($e7da-$e466)-(_e7da-loadfile)
-	rts
+filetable
+	include	filetable.s	; file look up table
 
 _e90e	ds.b	($e90e-$e466)-(_e90e-loadfile)
 	rts
@@ -241,9 +241,23 @@ _e90e	ds.b	($e90e-$e466)-(_e90e-loadfile)
 _e96a	ds.b	($e96a-$e466)-(_e96a-loadfile)
 	rts
 
-filetable
-	include	filetable.s	; file look up table
-
+_ea22	ds.b	($ea22-$e466)-(_ea22-loadfile)
+	ds.l	2
+	dc.l	$a1a1ff
+	ds.l	1
+	dc.w	$4489
+	dc.w	$4489
+	dc.w	$4489
+	dc.w	$4489
+	dc.w	$4489
+	dc.w	$4489
+	ds.w	21
+	dc.w	1
+	dc.w	$67b6
+	
+_ea6c	clr.b	$eb3c
+	clr.b	d0
+	rts
 
 end	;---- datas
 
