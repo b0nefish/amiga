@@ -21,7 +21,11 @@
 	; d0 = file index
 
 loadfile
-	movem.l	d0-a6,-(sp)
+	movem.l	d0-a6,-(sp)	;
+	subq.w	#1,d0		;
+	bmi.w	.quit		;
+
+	;----
 
 	lea	$dff000,a6
 	lea	$bfd000,a5	; ciab
@@ -39,8 +43,6 @@ loadfile
 	;----
 
 	lea	filetable(pc),a1
-	subq.w	#1,d0		;
-	bmi.b	.done		;
 	lsl.w	#3,d0		;
 	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
 	cmpi.l	#(512*11*2*80)-1,d0
@@ -87,7 +89,7 @@ loadfile
 
 	;----
 
-	movem.l	(sp)+,d0-a6	;
+.quit	movem.l	(sp)+,d0-a6	;
 	rts			; quit loader
 
 	;---- go track 0
