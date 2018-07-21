@@ -140,26 +140,26 @@ next	btst.b	#2,$100(a5)	;
 	
 	;---- delay (ciaa timer b)
 
-delay	move.b	#%10000010,$d00(a4)
+delay	;move.b	#%10000010,$d00(a4)
 	move.b	#%00001000,$f00(a4)
 	move.b	#$22,$600(a4)
 	move.b	#$0c,$700(a4)	; start oneshoot timer
-.wait	btst.b	#1,$d00(a4)
-	beq.b	.wait
+.wait	btst.b	#0,$f00(a4)
+	bne.b	.wait
 	rts
 
 	;---- load track
 
 wordsync	EQU	$4489
-gap		EQU	0
-readtracklen	EQU	$9867
+gap		EQU	350
+readtracklen	EQU	((1088*11)/2)+gap
 
 load	movem.l	d0-a3,-(sp)
 	move.w	#%1000001000010000,$96(a6)
 
 .retry	;lea	rawdata,a0
 	move.l	$ea68,a0
-	lea	$414(a0),a0	
+	;lea	$414(a0),a0	
 	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
@@ -167,8 +167,8 @@ load	movem.l	d0-a3,-(sp)
 	move.w	#%0111111100000000,$9e(a6)
 	move.w	#%1001010100000000,$9e(a6)
 	move.w	#$8000!readtracklen,d0
-	move.w	d0,$24(a6)	; read 6247 dma words
-	move.w	d0,$24(a6)	;
+	move.w	d0,$24(a6)
+	move.w	d0,$24(a6)
 
 .wait	btst.b	#1,$1f(a6)
 	beq.b	.wait
