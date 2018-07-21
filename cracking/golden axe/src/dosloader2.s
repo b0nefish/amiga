@@ -142,8 +142,8 @@ next	btst.b	#2,$100(a5)	;
 
 delay	;move.b	#%10000010,$d00(a4)
 	move.b	#%00001000,$f00(a4)
-	move.b	#$22,$600(a4)
-	move.b	#$0c,$700(a4)	; start oneshoot timer
+	move.b	#$c4,$600(a4)
+	move.b	#$09,$700(a4)	; start oneshoot timer
 .wait	btst.b	#0,$f00(a4)
 	bne.b	.wait
 	rts

@@ -1,0 +1,2 @@
+offset $4e26 ($6 bytes) : live counter
+offset $dc66 ($6d2 bytes) : trackloader
