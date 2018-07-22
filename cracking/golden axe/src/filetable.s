@@ -110,7 +110,7 @@ offset	SET	offset+$38be
 	dc.l	offset,$400f	; $22	
 offset	SET	offset+$400f
 
-	dc.l	($400+$1800+$1610+$1070),$94fc	; $23 (loader1 packed)
+	dc.l	($400+$1800+$1610+$1070),$9340	; $23 (loader1 packed)
 
 	dc.l	offset,$7541	; $24
 offset	SET	offset+$7541

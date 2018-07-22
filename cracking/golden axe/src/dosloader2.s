@@ -73,7 +73,7 @@ loadfile
 	dble	d7,.loop	;
 
 	tst.l	d1		; enought data ?
-	beq.b	.done		; yep => depack
+	beq.b	.done		; yep => done
 	
 	jsr	next(pc)	; nop => go next track
 	jsr	load(pc)	; load it
@@ -257,7 +257,7 @@ _ea22	ds.b	($ea22-$e466)-(_ea22-loadfile)
 	dc.w	1
 	dc.w	$67b6
 	
-_ea6c	clr.b	$eb3c
+_ea6c	clr.b	$eb3c		; bypass track check protection
 	clr.b	d0
 	rts
 
