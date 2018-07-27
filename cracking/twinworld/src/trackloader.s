@@ -6,7 +6,10 @@
 	include	startup.s
 
 	lea	target,a0
-	lea	filetable,a1
+	lea	riptable(pc),a1
+	moveq	#0,d0		; file index
+	mulu.w	#20,d0
+	lea	(a1,d0.l),a1
 
 	;---- 
 	; Twinworld 
@@ -179,9 +182,11 @@ lc4c52e	movem.l	(a0)+,d0/d1	;
 
 end	;---- datas
 
+riptable
+	dc.l	$d,$20000,0,0,0
+
 filetable
-	dc.l	$8c,$2c95,0
-	dc.l	6032*2,45000
+	include	filetable.s
 
 trackinfo
 	ds.l	1
@@ -192,5 +197,5 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	$da40
+target	ds.b	$20000
 kk	dc.b	'sebo'	
