@@ -6,14 +6,15 @@
 	include	startup.s
 
 	lea	target,a0
-	moveq	#0,d0
+	lea	filetable,a1
 
 	;---- 
 	; Twinworld 
 	;
-	; AmigaDOS File Loader
+	; Trackloader
 	;
 	; a0 = target ptr
+	; a1 = file pointer
 	; d0 = file index
 
 loadfile
@@ -34,29 +35,21 @@ loadfile
 
 	;----
 
-	lea	filetable(pc),a1
-	lsl.w	#3,d0		;
-	movem.l	(a1,d0.w),d0/d1	; d0 = disk offset ; d1 = file length	
-
-	divu.w	#6032,d0	;
-	move.w	d0,d7		;
-	lsr.w	#1,d7		; 
+	movem.l	(a1),d0-d2	; d0 = track ; d1 = file length	 
 	bclr.b	#2,$100(a5)	; fix head
-	;andi.w	#1,d0		; side ?
-	;beq.b	.read		;
-	;bchg.b	#2,$100(a5)	;
-.read	swap	d0		;
+	cmpi.w	#80,d0		; 
+	blt.b	.read		;
+	bchg.b	#2,$100(a5)	; change side
+	subi.w	#80,d0		;
+.read	move.w	d0,d7		;
 	jsr	track0(pc)	;
 	jsr	move(pc)	;
 	jsr	load(pc)	;
 
 .copy	lea	decode,a1	;
-	lea	(a1,d0.w),a1	;
-	move.w	#6032,d7	;
-	sub.w	d0,d7		;
-	subq.w	#1,d7		;
+	move.w	#6032-1,d7	;
 .loop	move.b	(a1)+,(a0)+	; copy byte
-	subq.l	#1,d1		; decrease length
+	subq.l	#1,d1		;
 	dble	d7,.loop	;
 
 	tst.l	d1		; enought data ?
@@ -64,7 +57,6 @@ loadfile
 	
 	jsr	next(pc)	; nop => go next track
 	jsr	load(pc)	; load it
-	moveq	#0,d0		; zero copy offset
 	bra.b	.copy		; goto to copy loop
 
 	;----
@@ -188,6 +180,7 @@ lc4c52e	movem.l	(a0)+,d0/d1	;
 end	;---- datas
 
 filetable
+	dc.l	$8c,$2c95,0
 	dc.l	6032*2,45000
 
 trackinfo
@@ -199,6 +192,5 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	45000
-	dc.b	'sebo'
-kk	
+target	ds.b	$da40
+kk	dc.b	'sebo'	
