@@ -7,7 +7,7 @@
 
 	lea	target,a0
 	lea	riptable(pc),a1
-	moveq	#0,d0		; file index
+	moveq	#3,d0		; file index
 	mulu.w	#20,d0
 	lea	(a1,d0.l),a1
 
@@ -168,7 +168,7 @@ mask	EQU	$55555555
 	
 	lea	10(a0),a0	;
 	lea	decode(pc),a1	;
-	move.l	#1508-1,d7	; 1 sector = 6032 bytes
+	move.l	#1508-1,d7	; 1 track = 6032 bytes
 lc4c52e	movem.l	(a0)+,d0/d1	;
 	and.l	d6,d0		;
 	and.l	d6,d1		;
@@ -183,7 +183,10 @@ lc4c52e	movem.l	(a0)+,d0/d1	;
 end	;---- datas
 
 riptable
-	dc.l	$d,$20000,0,0,0
+	dc.l	001,6032*40,0,0,0
+	dc.l	041,6032*(80-41),0,0,0
+	dc.l	081,6032*40,0,0,0
+	dc.l	121,6032*(160-121),0,0,0
 
 filetable
 	include	filetable.s
@@ -197,5 +200,5 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	$20000
+target	ds.b	6032*(160-121)
 kk	dc.b	'sebo'	
