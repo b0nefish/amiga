@@ -206,6 +206,7 @@ length
 	ds.l	1
 
 filetable
+	;dc.l	1,$afc8,0,0,0	; bootstrap
 	include	filetable.s
 
 trackinfo
@@ -217,5 +218,5 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	$20000
+target	ds.b	$afc8
 kk	dc.b	'sebo'	
