@@ -5,29 +5,29 @@
 
 	include	startup.s
 
-	;lea	target,a0
-	;lea	filetable(pc),a1
-	;moveq	#20,d0		; file index
-	;mulu.w	#20,d0
-	;lea	(a1,d0.l),a1
-	;jsr	loadfile(pc)
-	;move.l	d0,length
-	;rts
+	lea	target,a0
+	lea	filetable(pc),a1
+	moveq	#0,d0		; file index
+	mulu.w	#20,d0
+	lea	(a1,d0.l),a1
+	jsr	loadfile(pc)
+	move.l	d0,length
+	rts
 
 	;----
 	; Files ripper
 
-ripper	lea	target(pc),a0
-	lea	filetable(pc),a1
-	lea	$a*20(a1),a1
-	moveq	#0,d6
-	move.w	#9-1,d7	
-.loop	jsr	loadfile(pc)
-	add.l	d0,d6
-	lea	(a0,d0.l),a0
-	lea	20(a1),a1
-	dbf	d7,.loop	
-	move.l	d6,length
+ripper	lea	target(pc),a0	;
+	lea	filetable(pc),a1;
+	lea	$0*20(a1),a1	; start file pointer
+	moveq	#0,d6		;
+	move.w	#10-1,d7	; read 10 files	
+.loop	jsr	loadfile(pc)	; load
+	add.l	d0,d6		;
+	lea	(a0,d0.l),a0	; update target pointer
+	lea	20(a1),a1	; next file
+	dbf	d7,.loop	;
+	move.l	d6,length	; return length
 	rts
 
 	;---- 
@@ -217,5 +217,5 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	$10f50
+target	ds.b	$20000
 kk	dc.b	'sebo'	
