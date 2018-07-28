@@ -5,23 +5,42 @@
 
 	include	startup.s
 
-	lea	target,a0
-	lea	riptable(pc),a1
-	moveq	#3,d0		; file index
-	mulu.w	#20,d0
-	lea	(a1,d0.l),a1
+	;lea	target,a0
+	;lea	filetable(pc),a1
+	;moveq	#20,d0		; file index
+	;mulu.w	#20,d0
+	;lea	(a1,d0.l),a1
+	;jsr	loadfile(pc)
+	;move.l	d0,length
+	;rts
+
+	;----
+	; Files ripper
+
+ripper	lea	target(pc),a0
+	lea	filetable(pc),a1
+	lea	$a*20(a1),a1
+	moveq	#0,d6
+	move.w	#9-1,d7	
+.loop	jsr	loadfile(pc)
+	add.l	d0,d6
+	lea	(a0,d0.l),a0
+	lea	20(a1),a1
+	dbf	d7,.loop	
+	move.l	d6,length
+	rts
 
 	;---- 
 	; Twinworld 
 	;
 	; Trackloader
 	;
-	; a0 = target ptr
-	; a1 = file pointer
-	; d0 = file index
+	; >a0 = target ptr
+	; >a1 = file pointer
+	; d0> = file length
 
 loadfile
-	movem.l	d0-a6,-(sp)
+	movem.l	d1-a6,-(sp)
 
 	lea	$dff000,a6
 	lea	$bfd000,a5	; ciab
@@ -38,7 +57,7 @@ loadfile
 
 	;----
 
-	movem.l	(a1),d0-d2	; d0 = track ; d1 = file length	 
+	movem.l	(a1),d0-d1	; d0 = track ; d1 = file length	 
 	bclr.b	#2,$100(a5)	; fix head
 	cmpi.w	#80,d0		; 
 	blt.b	.read		;
@@ -49,9 +68,9 @@ loadfile
 	jsr	move(pc)	;
 	jsr	load(pc)	;
 
-.copy	lea	decode,a1	;
+.copy	lea	decode,a2	;
 	move.w	#6032-1,d7	;
-.loop	move.b	(a1)+,(a0)+	; copy byte
+.loop	move.b	(a2)+,(a0)+	; copy byte
 	subq.l	#1,d1		;
 	dble	d7,.loop	;
 
@@ -71,7 +90,8 @@ loadfile
 
 	;----
 
-.quit	movem.l	(sp)+,d0-a6	;
+	move.l	4(a1),d0	; return file length
+.quit	movem.l	(sp)+,d1-a6	;
 	rts			; quit loader
 
 	;---- go track 0
@@ -182,11 +202,8 @@ lc4c52e	movem.l	(a0)+,d0/d1	;
 
 end	;---- datas
 
-riptable
-	dc.l	001,6032*40,0,0,0
-	dc.l	041,6032*(80-41),0,0,0
-	dc.l	081,6032*40,0,0,0
-	dc.l	121,6032*(160-121),0,0,0
+length
+	ds.l	1
 
 filetable
 	include	filetable.s
@@ -200,5 +217,5 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	6032*(160-121)
+target	ds.b	$10f50
 kk	dc.b	'sebo'	
