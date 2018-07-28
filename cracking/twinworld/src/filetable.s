@@ -1,3 +1,4 @@
+offset	SET	$341b4
 	
 	; Twinworld file table look up
 
