@@ -17,7 +17,6 @@
 
 	;----
 
-begin
 table	include	filetable.s	; file look up table
 	ds.l	8		; gap
 
@@ -245,17 +244,11 @@ mask	EQU	$55555555
 
 end	;---- datas
 
-filetable
-	include	filetable.s	; file look up table
+rawdata	ds.w	readtracklen
+	dc.b	'sebo'
 
-;rawdata	ds.w	readtracklen
-;	dc.b	'sebo'
-
-;decode	ds.b	512*11
-;	dc.b	'sebo'
-
-;decrnch	ds.b	$15000
-;	dc.b	'sebo'
+decode	ds.b	512*11
+	dc.b	'sebo'
 
 target	ds.b	$20000
 	dc.b	'sebo'	
