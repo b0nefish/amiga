@@ -1,4 +1,4 @@
-offset	SET	0				#$34146
+offset	SET	$34146
 	
 	; Twinworld file table look up
 
