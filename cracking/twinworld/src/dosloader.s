@@ -1,18 +1,19 @@
 
 	SECTION	trackloader,CODE_C
 	
-	OPT	P+
+	;OPT	P+
 
-	;include	startup.s
+	include	startup.s
 
 	;----
 	
-	;lea	target,a0
+	lea	target,a0
 	lea	table(pc),a1
-	moveq	#1,d0
+	move.w	#$29,d0
 	mulu.w	#20,d0
 	movem.l	(a1,d0.l),d0/d1	
 	jsr	loadf(pc)
+	move.l	d1,length
 	rts
 
 	;----
@@ -29,7 +30,8 @@ table	include	filetable.s	; file look up table
 	; >d0 = disk offset
 	; >d1 = length
 	; >d2 = 0
-	; d0> = return code (0 = success, 1 = error)
+	; d0> = return code (1 = success, 0 = error)
+	; d1> = length
 
 loadf	bra.w	.load		;
 	bra.w	.rts		;
@@ -40,7 +42,7 @@ loadf	bra.w	.load		;
 
 	;----
 
-.load	movem.l	d1-a6,-(sp)	;
+.load	movem.l	d2-a6,-(sp)	;
 
 	;----
 
@@ -78,17 +80,18 @@ loadf	bra.w	.load		;
 	jsr	move(pc)	;
 	jsr	load(pc)	;
 
-.copy	;lea	decode,a1	;
-	lea	$4500,a1	;
+	move.l	d1,d6		;
+.copy	lea	decode,a1	;
+	;lea	$4500,a1	;
 	lea	(a1,d0.w),a1	;
 	move.w	#512*11,d7	;
 	sub.w	d0,d7		;
 	subq.w	#1,d7		;
 .loop	move.b	(a1)+,(a0)+	; copy byte
-	subq.l	#1,d1		; decrease length
+	subq.l	#1,d6		; decrease length
 	dble	d7,.loop	;
 
-	tst.l	d1		; enought data ?
+	tst.l	d6		; enought data ?
 	beq.b	.done		; yep => done
 	
 	jsr	next(pc)	; nop => go next track
@@ -105,8 +108,8 @@ loadf	bra.w	.load		;
 
 	;----
 
-.quit	movem.l	(sp)+,d1-a6	; quit loader
-	moveq	#0,d0		;
+.quit	movem.l	(sp)+,d2-a6	; quit loader
+	moveq	#1,d0		;
 .rts	rts			;
 
 	;---- go track 0
@@ -173,8 +176,8 @@ readtracklen	EQU	((1088*11)/2)+gap
 load	movem.l	d0-a3,-(sp)
 	move.w	#%1000001000010000,$96(a6)
 
-.retry	;lea	rawdata,a0
-	lea	$400,a0
+.retry	lea	rawdata,a0
+	;lea	$400,a0
 	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
@@ -194,8 +197,8 @@ load	movem.l	d0-a3,-(sp)
 	
 mask	EQU	$55555555
 
-.decode	;lea	decode,a1	;
-	lea	$4500,a1	;
+.decode	lea	decode,a1	;
+	;lea	$4500,a1	;
 	moveq	#11-1,d6	;
 	move.l	#mask,d0	;
 
@@ -246,11 +249,13 @@ mask	EQU	$55555555
 
 end	;---- datas
 
+length	ds.l	1
+
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
 
 decode	ds.b	512*11
 	dc.b	'sebo'
 
-target	ds.b	$20000
-	dc.b	'sebo'	
+target	ds.b	$23bc
+uu	dc.b	'sebo'	
