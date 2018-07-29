@@ -207,7 +207,7 @@ length
 
 filetable
 	;dc.l	1,$afc8,0,0,0	; bootstrap
-	include	filetable.s
+	incbin	/bin/filetable
 
 trackinfo
 	ds.l	1

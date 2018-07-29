@@ -1,0 +1,2 @@
+offset $94e8 ($438) : file table look up
+offset $9920 ($680 bytes) : loader
