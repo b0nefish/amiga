@@ -41,6 +41,16 @@ boot	dc.b	'DOS',0
 	move.w	#$7fff,$dff09a
 	move.w	#$7fff,$dff09c
 
+	;---- trainer (unlimited lives)
+
+	lea	$50000,a0
+	lea	$42d0(a0),a0
+	move.w	#$4e71,d0	
+	move.w	d0,(a0)+
+	move.w	d0,(a0)+
+	move.w	d0,(a0)+
+	move.w	d0,(a0)+
+
 	;----
 	
 	lea	reloc(pc),a0
