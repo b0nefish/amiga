@@ -160,9 +160,8 @@ next	btst.b	#2,$100(a5)	;
 	;---- cpu delay
 
 delay	move.l	d7,-(sp)	;
-	move.w	#2561-1,d7	;
-.loop	nop			;
-	dbf	d7,.loop	;
+	move.w	#3000-1,d7	;
+.loop	dbf	d7,.loop	;
 	move.l	(sp)+,d7	;
 	rts			;
 
