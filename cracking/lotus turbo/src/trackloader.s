@@ -5,11 +5,30 @@
 
 	include	startup.s
 
-	lea	target,a0
-	move.l	#1,d0
-	move.l	a0,d1
-	jsr	loader(pc)	
-	rts
+	;lea	target,a0
+	;move.l	#1,d0
+	;move.l	a0,d1
+	;jsr	loader(pc)	
+	;rts
+
+	;----
+	; Files ripper
+
+ripper	lea	target(pc),a0	;
+	move.w	#$f8,d5		; first file
+	moveq	#0,d6		;
+	move.w	#8-1,d7	; 	
+
+.loop	move.w	d5,d0		;	
+	move.l	a0,d1		;
+	jsr	loader(pc)	; load
+	add.l	d0,d6		; sum file length	
+	lea	(a0,d0.l),a0	; update target pointer
+	addq.w	#1,d5		; next file
+	dbf	d7,.loop	;
+
+	move.l	d6,length	; push rip length
+	rts			;
 
 	;---- 
 	;
@@ -18,13 +37,15 @@
 	;
 	; >d0 = file index
 	; >d1 = target address
+	; d0> = file length
 
-loader	movem.l	d0-a6,-(sp)
+loader	movem.l	d1-a6,-(sp)
 
 	move.l	d1,a0		; a0 = target
 	lea	filetable(pc),a1;
 	lsl.w	#3,d0		;
 	move.l	0(a1,d0.w),d1	; d1 = file length
+	move.l	d1,d6		;
 	ble.w	.quit 		;
 	move.l	4(a1,d0.w),d0	; d0 = disk offset
 	ble.w	.quit		;		
@@ -84,7 +105,8 @@ loader	movem.l	d0-a6,-(sp)
 	
 	;----
 
-.quit	movem.l	(sp)+,d0-a6	;
+.quit	move.l	d6,d0		; return file length
+	movem.l	(sp)+,d1-a6	;
 	rts			;
 
 	;---- go track 0
@@ -193,8 +215,10 @@ mask	EQU	$5555
 	
 	;----
 
+length	ds.l	1
+
 filetable
-	incbin	'/bin/filetable'
+	incbin	/bin/filetable
 
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
@@ -202,6 +226,6 @@ rawdata	ds.w	readtracklen
 buffer	ds.b	6144
 	dc.b	'sebo'
 
-target	ds.b	$5000
+target	ds.b	$1f044
 end	dc.b	'sebo'
 	

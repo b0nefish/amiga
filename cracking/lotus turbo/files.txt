@@ -1,0 +1,8 @@
+00 3f (64 files) len = $110ef
+40 7f (64 files) len = $26898
+80 bf (64 files) len = $32910
+c0 ef (48 files) len = $1e688
+f0 f7 (8 files)  len = $24178
+f8 ff (8 files)  len = $1f044
+
+total length = $cbadb (834267 bytes)
