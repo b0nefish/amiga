@@ -144,7 +144,7 @@ move	subq.w	#1,d7		;
 	;---- next track
 
 next	btst.b	#2,$100(a5)	;
-	bne.b	.done		;
+	beq.b	.done		;
 .step	bclr.b	#0,$100(a5)	; step pulse
 	nop			;
 	nop			;
@@ -223,10 +223,24 @@ mask	EQU	$5555
 
 	;----
 
+	;lea	count(pc),a0	;
+	;lea	checksums(pc),a1;
+	;move.w	(a0),d0		;
+	;add.w	d0,d0		;
+	;move.w	d5,(a1,d0.w)	; save checksum
+	;addq.w	#1,(a0)		;
+
+	;----
+
 	movem.l	(sp)+,d0-a3	;
 	rts			;
 	
 	;----
+
+count	ds.w	1
+
+checksums
+	ds.w	160
 
 length	ds.l	1
 
