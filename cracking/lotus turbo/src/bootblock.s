@@ -71,6 +71,13 @@ boot	dc.b	'DOS',0
 .loop3	move.l	(a0)+,(a1)+	; reloc trackloader
 	dbf	d7,.loop3	;
 
+	;----
+
+	lea	$72b92.l,a0	; disable track protection
+	move.l	#$4e714e75,(a0)	;
+
+	;----
+
 	jmp	$72000.l	; bootstrap the game
 
 	;----
