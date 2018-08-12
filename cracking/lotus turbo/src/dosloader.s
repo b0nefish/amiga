@@ -1,18 +1,18 @@
 
-	SECTION	trackloader,CODE_C
+	;SECTION	trackloader,CODE_C
 	
 	;OPT	P+
 
-	include	startup.s
+	;include	startup.s
 
 	;----
 	
-	lea	target,a0
-	move.l	a0,d1
-	move.w	#255,d0
-	jsr	loader+8(pc)
-	move.l	d0,length
-	rts
+	;lea	target,a0
+	;move.l	a0,d1
+	;move.w	#255,d0
+	;jsr	loader+8(pc)
+	;move.l	d0,length
+	;rts
 
 	;---- 
 	; Lotus Turbo Challenge 
@@ -22,6 +22,8 @@
 	; >d0 = file index
 	; >d1 = target
 	; d0> = file length
+
+codesize	EQU 574
 
 loader	bra.w	.rts		;
 	bra.w	.rts		;
@@ -34,7 +36,7 @@ loader	bra.w	.rts		;
 
 	move.l	d1,a0		; a0 = target
 	lea	$400.w,a1	;
-	lea	table(pc),a1	;
+	;lea	table(pc),a1	;
 	lsl.w	#3,d0		;
 	move.l	0(a1,d0.w),d1	; d1 = file length
 	move.l	d1,d6		;
@@ -47,7 +49,6 @@ loader	bra.w	.rts		;
 	lea	$dff000,a6	; custom chip
 	lea	$bfd000,a5	; ciab
 	lea	$bfe001,a4	; ciaa
-	lea	storage(pc),a3	; loader storage
 
 	;----
 
@@ -73,7 +74,7 @@ loader	bra.w	.rts		;
 	jsr	load(pc)	;
 
 .copy	lea	$c00000,a1	;
-	lea	buffer(pc),a1	;
+	;lea	buffer(pc),a1	;
 	lea	(a1,d0.w),a1	;
 	move.w	#512*11,d7	;
 	sub.w	d0,d7		;
@@ -160,7 +161,7 @@ delay	move.l	d7,-(sp)	;
 	;---- load track
 
 wordsync	EQU	$4489
-gap		EQU	172+26
+gap		EQU	172+((($13b6-$1000)-codesize)/2)
 readtracklen	EQU	((1088*11)/2)+gap
 
 load	movem.l	d0-a3,-(sp)
@@ -187,8 +188,8 @@ load	movem.l	d0-a3,-(sp)
 	
 mask	EQU	$55555555
 
-.decode	lea	$c00000,a1	;
-	lea	buffer(pc),a1	;
+.decode	lea	$c00000,a1	; decode in fastmem
+	;lea	buffer(pc),a1	;
 	moveq	#11-1,d6	;
 	move.l	#mask,d0	;
 
@@ -239,17 +240,16 @@ mask	EQU	$55555555
 
 	;----
 
-storage	ds.b	64		; storage
 rawdata	ds.w	readtracklen	; raw buffer
 
 end	;---- datas
 
-length	ds.l	1
+;length	ds.l	1
 
-table	incbin	/bin/dosfiletable
+;table	incbin	/bin/dosfiletable
 
-buffer	ds.b	512*11
-	dc.b	'sebo'
+;buffer	ds.b	512*11
+;	dc.b	'sebo'
 
-target	ds.b	$df48
-	dc.b	'sebo'	
+;target	ds.b	$df48
+;	dc.b	'sebo'	

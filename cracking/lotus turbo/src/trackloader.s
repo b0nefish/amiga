@@ -5,11 +5,11 @@
 
 	include	startup.s
 
-	;lea	target,a0
-	;move.l	#1,d0
-	;move.l	a0,d1
-	;jsr	loader(pc)	
-	;rts
+	lea	target,a0
+	move.l	#257,d0
+	move.l	a0,d1
+	jsr	loader(pc)	
+	rts
 
 	;----
 	; Files ripper
@@ -174,7 +174,7 @@ retry		EQU	4
 load	movem.l	d0-a3,-(sp)
 	move.w	#%1000001000010000,$96(a6)
 
-	lea	rawdata(pc),a0
+.retry	lea	rawdata(pc),a0
 	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
@@ -196,6 +196,7 @@ load	movem.l	d0-a3,-(sp)
 mask	EQU	$5555
 
 .decode	lea	buffer,a1	;
+	moveq	#0,d5		;
 	move.w	#mask,d6	;
 .sync	cmp.w	(a0)+,d6	;
 	bne.b	.sync		;
@@ -206,7 +207,19 @@ mask	EQU	$5555
 	add.w	d1,d1		;
 	or.w	d1,d0		;
 	move.w	d0,(a1)+	;
+	add.w	d0,d5		; add checksum
 	dbf	d7,.loop	;
+
+	;---- checksum
+
+	movem.w	(a0)+,d0/d1	;
+	and.w	d6,d0		;
+	and.w	d6,d1		;	
+	add.w	d1,d1		;
+	or.w	d1,d0		;
+
+	cmp.w	d0,d5		; compare checksum
+	bne.b	.retry		;
 
 	;----
 
@@ -218,7 +231,9 @@ mask	EQU	$5555
 length	ds.l	1
 
 filetable
-	incbin	/bin/filetable
+	incbin	/bin/filetable	; files 0 to 255
+	dc.l	$800,$3000	; file 256 (filetable)
+	dc.l	$df48,$3800	; file 257 (bootstrap)
 
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
@@ -226,6 +241,6 @@ rawdata	ds.w	readtracklen
 buffer	ds.b	6144
 	dc.b	'sebo'
 
-target	ds.b	$1f044
+target	ds.b	$df48
 end	dc.b	'sebo'
 	
