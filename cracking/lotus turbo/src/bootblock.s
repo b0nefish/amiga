@@ -19,11 +19,6 @@ boot	dc.b	'DOS',0
 	dc.l	880
 
 	;----
-	
-	move.w	#%0000000110000000,$dff096	
-	clr.w	$dff180
-
-	;----
 
 	move.w	#2,$1c(a1)
 	move.l	#11*512*11,$24(a1)	; length
@@ -67,8 +62,8 @@ boot	dc.b	'DOS',0
 	dbf	d7,.loop2	;
 
 	lea	$1000.w,a1	;
-	move.w	#(1024/4)-1,d7	;
-.loop3	move.l	(a0)+,(a1)+	; reloc trackloader
+	move.w	#574-1,d7	;
+.loop3	move.b	(a0)+,(a1)+	; reloc trackloader
 	dbf	d7,.loop3	;
 
 	;----

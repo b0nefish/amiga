@@ -5,19 +5,19 @@
 
 	include	startup.s
 
-	lea	target,a0
-	move.l	#257,d0
-	move.l	a0,d1
-	jsr	loader(pc)	
-	rts
+	;lea	target,a0
+	;move.l	#257,d0
+	;move.l	a0,d1
+	;jsr	loader(pc)	
+	;rts
 
 	;----
 	; Files ripper
 
 ripper	lea	target(pc),a0	;
-	move.w	#$f8,d5		; first file
+	move.w	#$0,d5		; first file
 	moveq	#0,d6		;
-	move.w	#8-1,d7	; 	
+	move.w	#64-1,d7	; 	
 
 .loop	move.w	d5,d0		;	
 	move.l	a0,d1		;
@@ -255,6 +255,6 @@ rawdata	ds.w	readtracklen
 buffer	ds.b	6144
 	dc.b	'sebo'
 
-target	ds.b	$df48
+target	ds.b	$110ef
 end	dc.b	'sebo'
 	
