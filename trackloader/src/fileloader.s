@@ -8,7 +8,7 @@
 	;----
 	
 	lea	buffer(pc),a0
-	move.w	#0,d0
+	move.w	#244,d0;244
 	jsr	loader(pc)
 	rts
 
@@ -28,6 +28,8 @@ loader	movem.l	d0-a6,-(sp)	;
 	ble.w	.quit 		;
 	move.l	4(a1,d0.w),d0	; d0 = disk offset
 	ble.w	.quit		;		
+
+	move.l	d1,length
 
 	;----
 
@@ -63,7 +65,6 @@ loader	movem.l	d0-a6,-(sp)	;
 	beq.b	.trk0		;
 	bchg.b	#2,$100(a5)	; toggle head
 .trk0	jsr	track0(pc)	;
-	swap	d6		; get track offset
 
 	;---- move head
 
@@ -80,11 +81,11 @@ loader	movem.l	d0-a6,-(sp)	;
 
 	;----
 
-.load	movem.l	a4/a5,-(sp)	;
-
-	lea	buffer(pc),a3	;
-	lea	(a3,d6.w),a4	; upper target pointer	
-	lea	(a4,d7.w),a5	; lower target pointer
+	move.l	d6,d0		;
+	swap	d0		;
+	neg.w	d0		;
+	move.w	d0,d6		;
+	swap	d6		; d6 = -(offset) | +(offset)
 
 	;---- load track
 
@@ -92,8 +93,13 @@ wordsync	EQU	$4489
 gap		EQU	350
 readtracklen	EQU	((1088*11)/2)+gap
 
-.retry	lea	rawdata(pc),a2
-	move.l	a2,$20(a6)
+.load	movem.l	a4/a5,-(sp)	;
+
+	lea	(a0,d6.w),a4	; upper reference
+	lea	(a4,d7.l),a5	; lower reference
+
+.retry	lea	rawdata(pc),a1	
+	move.l	a1,$20(a6)	
 	move.w	#$4000,$24(a6)
 	move.w 	#%0000000000000010,$9c(a6)
 	move.w	#$8000!readtracklen,d0
@@ -110,16 +116,17 @@ readtracklen	EQU	((1088*11)/2)+gap
 	
 mask	EQU	$55555555
 
-.decode	moveq	#11-1,d5	;
-	move.l	#mask,d0	;
+.decode	move.l	#mask,d0	;
+	moveq	#11-1,d5	;
+	swap	d6		;
 
-.loop1	cmpi.w	#wordsync,(a2)+	; sync
+.loop1	cmpi.w	#wordsync,(a1)+	; sync
 	bne.b	.loop1		;
-	cmpi.w	#wordsync,(a2)	;
+	cmpi.w	#wordsync,(a1)	;
 	beq.b	.loop1		;
 
-	move.l	a2,a3		;
-	move.l	48(a2),d1	; d1 = header checksum 
+	move.l	a1,a3		;
+	move.l	48(a1),d1	; d1 = header checksum 
 	REPT	12		;
 	move.l	(a3)+,d2	;
 	eor.l	d2,d1		;
@@ -127,20 +134,19 @@ mask	EQU	$55555555
 	and.l	d0,d1		;
 	bne.w	.retry		; correct header checksum ?
 
-	lea	buffer(pc),a3	;
-	movem.l	(a2),d1/d2	; decode sector header
+	movem.l	(a1),d1/d2	; decode sector header
 	and.l	d0,d1		; information
 	and.l	d0,d2		;
 	add.l	d1,d1		;
 	or.l	d2,d1		;
 	clr.b	d1		;
-	add.w	d1,d1		; d1 = (sector number * 512)
-	lea	(a3,d1.w),a1	; track pointer
-
+	add.w	d1,d1		; d1 = (block index * 512)
+	lea	(a0,d1.w),a2	; copy target pointer
+	
 	;---- checksum loop
 
-	lea	56(a2),a3	;
-	move.l	52(a2),d1	; d1 = block checksum
+	lea	56(a1),a3	;
+	move.l	52(a1),d1	; d1 = block checksum
 	move.w	#(512/4)-1,d4	; 
 .loop2	move.l	(a3),d2		; odd bits
 	move.l	512(a3),d3	; even bits
@@ -154,11 +160,11 @@ mask	EQU	$55555555
 
 	;---- 1 byte precision decode loop
 
-	lea	56(a2),a3	; mfm bitmap pointer
+	lea	56(a1),a3	; mfm bitmap pointer
 	move.w	#512-1,d4	; block size
-.loop3	cmpa.l	a4,a1		; track pointer between
+.loop3	cmp.l	a4,a2		; track pointer between
 	blt.b	.out		; file boundary ?
-	cmpa.l	a5,a1		; yes => copy
+	cmp.l	a5,a2		; yes => copy
 	bge.b	.out		; no  => next data
 	move.b	(a3),d2		; odd bits
 	move.b	512(a3),d3	; even bits
@@ -166,21 +172,28 @@ mask	EQU	$55555555
 	and.b	d0,d3		;
 	add.b	d2,d2		;
 	or.b	d3,d2		;
-	move.b	d2,(a0)+	; save decoded byte
+	move.b	d2,(a2,d6.w)	; save decoded byte
 	subq.l	#1,d7		; decrease file length
 .out	lea	1(a3),a3	; next byte in raw buffer
-	lea	1(a1),a1	; move track pointer
+	lea	1(a2),a2	; move track pointer
 	dbf	d4,.loop3	; next byte
 	dbf	d5,.loop1	; next block
 
-	movem.l	(sp)+,a4/a5	; restore cia base registers
+	;----
+
+	lea	512*11(a0),a0	;
+	swap	d6		;
+	clr.w	d6		;
+
+	move.l	d7,u
 
 	;----
+
+	movem.l	(sp)+,a4/a5	; restore cia base registers
 
 	tst.l	d7		; more data ?
 	ble.b	.done		; yes => load another track
 	jsr	next(pc)	; no  => load done
-	moveq	#0,d6		; zero track offset
 	bra.w	.load		; load next track		
 	
 	;----
@@ -250,11 +263,15 @@ delay
 
 	;---- data
 
+u	ds.l	1
+
+length	ds.l	1
+
 rawdata	ds.w	readtracklen	; raw buffer
 
-table	dc.l	2,$15ff
+table	;dc.l	2,$15ff
 	incbin	'hd0:cracking/lotus turbo/bin/dosfiletable'
 
-buffer	ds.b	2
-	dc.b	'sebo'
+buffer	ds.b	$18ffc
+k	dc.b	'sebo'
 
