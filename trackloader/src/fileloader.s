@@ -81,11 +81,10 @@ loader	movem.l	d0-a6,-(sp)	;
 
 	;----
 
-	move.l	d6,d0		;
-	swap	d0		;
-	neg.w	d0		;
-	move.w	d0,d6		;
-	swap	d6		; d6 = -(offset) | +(offset)
+	swap	d6		; correct base address a0 
+	move.w	d6,d0		; to copy data at the
+	neg.w	d0		; right position
+	lea	(a0,d0.w),a0	; this keep the references comparable  
 
 	;---- load track
 
@@ -118,7 +117,6 @@ mask	EQU	$55555555
 
 .decode	move.l	#mask,d0	;
 	moveq	#11-1,d5	;
-	swap	d6		;
 
 .loop1	cmpi.w	#wordsync,(a1)+	; sync
 	bne.b	.loop1		;
@@ -172,7 +170,7 @@ mask	EQU	$55555555
 	and.b	d0,d3		;
 	add.b	d2,d2		;
 	or.b	d3,d2		;
-	move.b	d2,(a2,d6.w)	; save decoded byte
+	move.b	d2,(a2)		; save decoded byte
 	subq.l	#1,d7		; decrease file length
 .out	lea	1(a3),a3	; next byte in raw buffer
 	lea	1(a2),a2	; move track pointer
@@ -182,7 +180,6 @@ mask	EQU	$55555555
 	;----
 
 	lea	512*11(a0),a0	;
-	swap	d6		;
 	clr.w	d6		;
 
 	move.l	d7,u
@@ -269,7 +266,7 @@ length	ds.l	1
 
 rawdata	ds.w	readtracklen	; raw buffer
 
-table	;dc.l	2,$15ff
+table	;dc.l	272,$af80
 	incbin	'hd0:cracking/lotus turbo/bin/dosfiletable'
 
 buffer	ds.b	$18ffc
