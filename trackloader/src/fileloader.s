@@ -8,7 +8,7 @@
 	;----
 	
 	lea	buffer(pc),a0
-	move.w	#244,d0;244
+	move.w	#0,d0
 	jsr	loader(pc)
 	rts
 
@@ -20,16 +20,16 @@
 
 ciatiming	EQU 1
 
-loader	movem.l	d0-a6,-(sp)	;
+loader	movem.l	d0-a6,-(sp)	; backup registers
 
 	lea	table(pc),a1	;
-	lsl.w	#3,d0		;
-	move.l	0(a1,d0.w),d1	; d1 = file length
+	mulu.w	#20,d0		;
+	move.l	0(a1,d0.w),d6	; d6 = disk offset
+	blt.w	.quit		;		
+	move.l	4(a1,d0.w),d7	; d7 = file length
 	ble.w	.quit 		;
-	move.l	4(a1,d0.w),d0	; d0 = disk offset
-	ble.w	.quit		;		
 
-	move.l	d1,length
+	movem.l	d6/d7,f
 
 	;----
 
@@ -55,8 +55,6 @@ loader	movem.l	d0-a6,-(sp)	;
 
 	;----
 			
-	move.l	d0,d6		; d6 = offset
-	move.l	d1,d7		; d7 = length
 	divu.w	#512*11,d6	;
 	move.w	d6,d0		;
 	lsr.w	#1,d0		;
@@ -65,6 +63,14 @@ loader	movem.l	d0-a6,-(sp)	;
 	beq.b	.trk0		;
 	bchg.b	#2,$100(a5)	; toggle head
 .trk0	jsr	track0(pc)	;
+
+	;----
+
+	lea	.smc(pc),a1	;
+	swap	d6		;
+	move.w	d6,d1		;
+	neg.w	d1		; self modified code to
+	move.w	d1,2(a1)	; correct target pointer
 
 	;---- move head
 
@@ -78,13 +84,6 @@ loader	movem.l	d0-a6,-(sp)	;
 	bset.b	#0,$100(a5)	;
 	bsr.w	delay		; delay
 	dbf	d0,.loop0	;
-
-	;----
-
-	swap	d6		; correct base address a0 
-	move.w	d6,d0		; to copy data at the
-	neg.w	d0		; right position
-	lea	(a0,d0.w),a0	; this keep the references comparable  
 
 	;---- load track
 
@@ -170,7 +169,7 @@ mask	EQU	$55555555
 	and.b	d0,d3		;
 	add.b	d2,d2		;
 	or.b	d3,d2		;
-	move.b	d2,(a2)		; save decoded byte
+.smc	move.b	d2,0(a2)	; save decoded byte (smc)
 	subq.l	#1,d7		; decrease file length
 .out	lea	1(a3),a3	; next byte in raw buffer
 	lea	1(a2),a2	; move track pointer
@@ -262,13 +261,13 @@ delay
 
 u	ds.l	1
 
-length	ds.l	1
+f	ds.l	2
 
 rawdata	ds.w	readtracklen	; raw buffer
 
-table	;dc.l	272,$af80
-	incbin	'hd0:cracking/lotus turbo/bin/dosfiletable'
+table	dc.l	$3414c,3,0,0,0
+	include	'hd0:cracking/twinworld/src/filetable.s'
 
-buffer	ds.b	$18ffc
+buffer	ds.b	3
 k	dc.b	'sebo'
 
