@@ -5,10 +5,48 @@
 
 	include	startup.s
 
-trackloader
+	lea	target,a0
+	lea	filetable(pc),a1
+	moveq	#0,d0		; file index
+	lsl.w	#4,d0
+	lea	(a1,d0.w),a1
+	jsr	loadfile(pc)
+	move.l	d0,length
+	rts
+
+	;----
+	; Files ripper
+
+ripper	lea	target(pc),a0	;
+	lea	filetable(pc),a1;
+	lea	$0*20(a1),a1	; start file pointer
+	moveq	#0,d6		;
+	move.w	#10-1,d7	; read 10 files	
+.loop	jsr	loadfile(pc)	; load
+	add.l	d0,d6		;
+	lea	(a0,d0.l),a0	; update target pointer
+	lea	20(a1),a1	; next file
+	dbf	d7,.loop	;
+	move.l	d6,length	; return length
+	rts
+
+	;---- 
+	; Greatcourts 
+	;
+	; Trackloader
+	;
+	; >a0 = target ptr
+	; >a1 = file pointer
+	; d0> = file length
+
+loadfile
+	movem.l	d1-a6,-(sp)
+
 	lea	$dff000,a6
 	lea	$bfd000,a5	; ciab
 	lea	$bfe001,a4	; ciaa
+
+	;----
 
 	move.b	#%11111111,$100(a5)
 	bclr.b	#7,$100(a5)	; motor on
@@ -16,71 +54,46 @@ trackloader
 
 .ready	btst.b	#5,(a4)		; wait disk ready
 	bne.b	.ready		;
-	
-	;----
-
-	move.w	#30-1,d7	; pause before loading
-.wait1	bsr.w	delay		;
-	dbf	d7,.wait1	;
 
 	;----
-	
+
+	move.l	12(a1),d0	; d0 = track
+	move.l	8(a1),d1	; d1 = length	 
+	bclr.b	#2,$100(a5)	; fix head
+	cmpi.w	#80,d0		; 
+	blt.b	.read		;
+	bchg.b	#2,$100(a5)	; change side
+	subi.w	#80,d0		;
+.read	move.w	d0,d7		;
 	jsr	track0(pc)	;
-				;
-	moveq	#1,d7		;
-	jsr	move(pc)	; go track 1
+	jsr	move(pc)	;
+	jsr	load(pc)	;
 
-	;----
-	
-	lea	rawdata(pc),a0	;
-	moveq	#10-1,d6	; load 10 tracks both sides
-	
-.loop	move.w	#wordsync,(a0)+
+.copy	lea	decode,a2	;
+	move.w	#6032-1,d7	;
+.loop	move.b	(a2)+,(a0)+	; copy byte
+	subq.l	#1,d1		;
+	dble	d7,.loop	;
 
-	bchg.b	#2,$100(a5)	; change head
-.retry1	jsr	load(pc)	; load
-	move.l	d1,-(sp)	;
-	jsr	load(pc)	; reload
-	cmp.l	(sp)+,d1	; compare checksum
-	bne.b	.retry1		;
+	tst.l	d1		; enought data ?
+	beq.b	.done		; yep => done
 	
-	lea	(readtracklen*2)(a0),a0
-	move.w	#wordsync,(a0)+
-	
-	bchg.b	#2,$100(a5)	; change head
-.retry2	jsr	load(pc)	; load
-	move.l	d1,-(sp)	;
-	jsr	load(pc)	; reload
-	cmp.l	(sp)+,d1	; compare checksum
-	bne.b	.retry2		;
-
-	lea	(readtracklen*2)(a0),a0
-
-	jsr	step(pc)
-	dbf	d6,.loop
+	jsr	next(pc)	; nop => go next track
+	jsr	load(pc)	; load it
+	bra.b	.copy		; goto to copy loop
 
 	;----
 
-	move.w	#30-1,d7	; pause after loading
-.wait2	bsr.w	delay		;
-	dbf	d7,.wait2	;
-
-	;----
-
-	bset.b	#3,$100(a5)	; stop drive
+.done	bset.b	#3,$100(a5)	; stop drive
 	bset.b	#7,$100(a5)	;
 	bclr.b	#3,$100(a5)	;
 	bset.b	#3,$100(a5)	;
-	
+
 	;----
-	
-	rts
 
-loadedtrack
-	ds.l	1
-
-checksum
-	ds.l	1
+	move.l	4(a1),d0	; return file length
+.quit	movem.l	(sp)+,d1-a6	;
+	rts			; quit loader
 
 	;---- go track 0
 
@@ -114,50 +127,45 @@ move	subq.w	#1,d7
 	dbf	d7,.loop	;
 .done	rts			;
 
-	;---- step head
+	;---- next track
 
-step	bclr.b	#0,$100(a5)	; step pulse
+next	;btst.b	#2,$100(a5)	;
+	;bne.b	.done		;
+.step	bclr.b	#0,$100(a5)	; step pulse
 	nop			;
 	nop			;
 	nop			;
 	nop			;
 	bset.b	#0,$100(a5)	;
+.done	;bchg.b	#2,$100(a5)	;
 	bsr.b	delay		; delay
-	rts			;
+	rts
 	
-	;---- delay
+	;---- delay (ciaa timer b)
 
-delay	move.b	#%10000001,$d00(a4)
-	move.b	#%00001000,$e00(a4)
-	move.b	#$00,$400(a4)
-	move.b	#$55,$500(a4)	; start oneshoot timer
-.wait	btst.b	#0,$d00(a4)
-	beq.b	.wait
+delay	move.b	#%00001000,$f00(a4)
+	move.b	#$c4,$600(a4)
+	move.b	#$09,$700(a4)	; start oneshoot timer
+.wait	btst.b	#0,$f00(a4)
+	bne.b	.wait
 	rts
 
 	;---- load track
 
 wordsync	EQU	$5542
-readtracklen	EQU	(2+8+12064)/2
-index		EQU	0
-decode		EQU	1
+gap		EQU	0
+readtracklen	EQU	$4004/2
 
-load	move.l	a0,$20(a6)
+load	movem.l	d0-a3,-(sp)
+	move.w	#%1000001000010000,$96(a6)
+
+.retry	lea	rawdata,a0	
+	move.l	a0,$20(a6)
 	move.w	#$4000,$24(a6)
 	move.w	#wordsync,$7e(a6)
-	move.w	#%1000001000010000,$96(a6)
 	move.w 	#%0000000000000010,$9c(a6)
 	move.w	#%0111111100000000,$9e(a6)
 	move.w	#%1001010100000000,$9e(a6)
-
-	IFNE	index
-	
-	tst.b	$d00(a5)
-.index	btst	#4,$d00(a5)
-	beq.b	.index
-	
-	ENDC
-
 	move.w	#$8000!readtracklen,d0
 	move.w	d0,$24(a6)
 	move.w	d0,$24(a6)
@@ -166,72 +174,51 @@ load	move.l	a0,$20(a6)
 	beq.b	.wait
 
 	move.w	#$4000,$24(a6)
-	
-	IFEQ	decode
-	rts
-	ENDC
-	
-	;---- track decoder (no checksum)
+
+	;---- Twinworld Track Decoder
 	
 mask	EQU	$55555555
 
-.decode	move.l	a0,a1		;
-	lea	2(a1),a1	;
-	movem.l	(a1)+,d0/d1	;
-	andi.l	#mask,d0	;
-	andi.l	#mask,d1	;
+.decode	move.l	#mask,d6	;
+	movem.l	2(a0),d0/d1	;
+	and.l	d6,d0		;
+	and.l	d6,d1		;
+	add.l	d0,d0		;
+	or.l	d1,d0		; track info
+	move.l	d0,trackinfo
+	
+	lea	10(a0),a0	;
+	lea	decode(pc),a1	;
+	move.l	#1508-1,d7	; 1 track = 6032 bytes
+lc4c52e	movem.l	(a0)+,d0/d1	;
+	and.l	d6,d0		;
+	and.l	d6,d1		;
 	add.l	d0,d0		;
 	or.l	d1,d0		;
-	move.l	d0,d2		; get track information
-	
-	lea	buffer,a2	;
-	moveq	#0,d3		;
-	move.w	#1508-1,d7	;
-.loop	movem.l	(a1)+,d0/d1	; get raw data
-	andi.l	#mask,d0	;
-	andi.l	#mask,d1	;
-	add.l	d0,d0		;
-	or.l	d1,d0		;
-	eor.l	d0,d3		;
-	move.l	d0,(a2)+	; save decoded data
-	dbf	d7,.loop	;
-	
-	move.l	d2,d0		; d0 = track info
-	move.l	d3,d1		; d1 = checksum
-	rts
-	
-	;---- write track
+	move.l	d0,(a1)+	;
+	dbf	d7,lc4c52e	;
 
-writetracklen	EQU	1+readtracklen
+	movem.l	(sp)+,d0-a3	;
+	rts			;
 
-write	btst.b	#3,(a4)		; test disk write protection
-	beq.b	.done		;
+end	;---- datas
 
-	move.w	#%1000001000010000,$96(a6)
-	lea	rawdata(pc),a0
-	move.l	a0,$20(a6)
-	move.w	#$4000,$24(a6)
-	move.w	#%0000000000000010,$9c(a6)
-	move.w	#%0111111100000000,$9e(a6)
-	move.w	#%1001000100000000,$9e(a6)
-	move.w	#$c000!writetracklen,d0  
-	move.w	d0,$24(a6)
-	move.w	d0,$24(a6)
+length
+	ds.l	1
 
-.wait	btst.b	#1,$1f(a6)
-	beq.b	.wait
+filetable
+	dc.l	0,0,$d2f0,1	; bootstrap
+	;incbin	/bin/filetable
 
-	move.w	#$4000,$24(a6)
-.done	rts
-	
-	;----
+trackinfo
+	ds.l	1
 
-rawdata	ds.w	(1+readtracklen)*2*10
-end	dc.b	'stop'
+rawdata	ds.w	readtracklen
+	dc.b	'sebo'
 
+decode	ds.b	6032
+	dc.b	'sebo'
 
-	SECTION	DATA_F
-
-buffer	ds.l	1508
-	dc.b	'stop'
+target	ds.b	$d2f0
+kk	dc.b	'sebo'	
 
