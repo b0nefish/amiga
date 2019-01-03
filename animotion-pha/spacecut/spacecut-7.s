@@ -361,6 +361,7 @@ plane	lea	plane_params(pc),a0
 	add.l	d6,d2		;
 	add.l	d2,d0		;
 	neg.l	d0		;
+	asr.l	#7,d0		;
 	move.l	d0,6(a0)	; d = -(Ax + By + Cz)
  
 	;----
