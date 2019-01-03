@@ -100,10 +100,6 @@ rotate_cube
 	move.w	d4,d0		; d0 = OPx'''
 	move.w	d6,d2		; d2 = OPz'''
 
-	add.w	cube_xorigin(pc),d0
-	add.w	cube_yorigin(pc),d1
-	add.w	cube_zorigin(pc),d2
-
 	;---- screening
 	
 	move.w	d2,d3
@@ -352,17 +348,11 @@ plane	lea	plane_params(pc),a0
 	muls.w	d1,d3		;
 	sub.l	d3,d0		; d0 = C = x1y2 - x2y1 	
 
-	asl.l	#8,d0		;
-	asl.l	#8,d2		;
-	asl.l	#8,d6		;
-	add.l	d0,d0		;
-	add.l	d2,d2		;
-	add.l	d6,d6		;
-	swap	d0		;
-	swap	d2		;
-	swap	d6		;
+	asr.l	#7,d6		;
+	asr.l	#7,d2		;
+	asr.l	#7,d0		;
 	move.w	d6,0(a0)	; A
-	move.w	d2,2(a0)	; B
+	move.w	d2,2(a0)	; B 
 	move.w	d0,4(a0)	; C
 	
 	muls.w	0(a1),d6	; Ax
@@ -378,9 +368,6 @@ plane	lea	plane_params(pc),a0
 	move.w	#zobs,d0	;
 	muls.w	4(a0),d0	; d0 = CZo
 	add.l	6(a0),d0	; d0 = CZo + d
-	asl.l	#8,d0		;
-	add.l	d0,d0		;
-	swap	d0		;
 
 	;---- ray/plane intersect
 
@@ -390,15 +377,13 @@ ray_plane_intersect
 	subq.w	#1,d7		; 
 
 .loop	movem.w	(a1),d1-d3	;
+	clr.w	6(a1)		; clear flags
 	subi.w	#zobs,d3	;
 	muls.w	0(a0),d1	; 
 	muls.w	2(a0),d2	; 
 	muls.w	4(a0),d3	; 
 	add.l	d3,d2		;
 	add.l	d2,d1		;
-	asl.l	#8,d1		;
-	add.l	d1,d1		;
-	swap	d1		; 
 	move.w	4(a1),d2	; 
 	subi.w	#zobs,d2	; 
 	muls.w	d0,d2		; 
@@ -408,7 +393,6 @@ ray_plane_intersect
 	ext.l	d2		;
 .zero	move.l	#zobs,d1	;
 	sub.l	d2,d1		;
-	bclr.b	#0,6(a1)	; clear z flag
 	cmpi.l	#zobs,d1	; ray intersect plane behind observer ?
 	blt.b	.front		; yes => point is front of the plane	
 	move.w	4(a1),d2	; no  => ray intersect plane front of obs.
@@ -457,9 +441,6 @@ vector_plane_intersect
 	add.l	d2,d1		;
 	add.l	d1,d0		;
 	add.l	6(a0),d0	;
-	asl.l	#8,d0		;
-	add.l	d0,d0		;
-	swap	d0		;
 
 	movem.w	(a4),d1-d3	; P1(X,Y,Z)
 	movem.w	(a5),d4-d6	; P2(X,Y,Z)
@@ -474,9 +455,6 @@ vector_plane_intersect
 	muls.w	4(a0),d3	; 
 	add.l	d3,d2		;
 	add.l	d2,d1		;
-	asl.l	#8,d1		;
-	add.l	d1,d1		;
-	swap	d1		;
 
 	muls.w	d0,d4		;
 	muls.w	d0,d5		;
@@ -630,7 +608,7 @@ fill_mask
 	move.w	#0,$64(a6)
 	move.w	#0,$66(a6)	
 	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
-;	move.w	#(height<<6)+20,$58(a6)	
+	move.w	#(height<<6)+20,$58(a6)	
 
 	move.l	doublebuffer(pc),a0
 	lea	(40*height*2)(a0),a0	
@@ -644,7 +622,7 @@ fill_mask
 	move.w	#0,$64(a6)
 	move.w	#0,$66(a6)	
 	move.l	#(((%1101<<8)+%00110000)<<16),$40(a6)
-;	move.w	#(height<<6)+20,$58(a6)	
+	move.w	#(height<<6)+20,$58(a6)	
 
 	;---- animate
 	
@@ -903,7 +881,7 @@ bitplaneptr
 	dc.w	$ee,0
 
 	dc.w	$5001,$fffe
-	dc.w	$100,$4200
+	dc.w	$100,$3200
 	dc.w	$ffdf,$fffe
 	dc.w	$2001,$fffe
 	dc.w	$100,$0200
@@ -937,15 +915,15 @@ boxsize	equ	20
 	
 cube_vertex
 	dc.w	8
-	dc.w	-boxsize,	boxsize,	boxsize
-	dc.w	boxsize,	boxsize,	boxsize
-	dc.w	boxsize,	-boxsize,	boxsize
-	dc.w	-boxsize,	-boxsize,	boxsize
+	dc.w	-boxsize,	boxsize+30,	boxsize
+	dc.w	boxsize,	boxsize+30,	boxsize
+	dc.w	boxsize,	-boxsize+30,	boxsize
+	dc.w	-boxsize,	-boxsize+30,	boxsize
 	
-	dc.w	-boxsize,	boxsize,	-boxsize
-	dc.w	boxsize,	boxsize,	-boxsize
-	dc.w	boxsize,	-boxsize,	-boxsize
-	dc.w	-boxsize,	-boxsize,	-boxsize
+	dc.w	-boxsize,	boxsize+30,	-boxsize
+	dc.w	boxsize,	boxsize+30,	-boxsize
+	dc.w	boxsize,	-boxsize+30,	-boxsize
+	dc.w	-boxsize,	-boxsize+30,	-boxsize
 	
 cube_rotated
 	ds.w	8*4		; X,Y,Z,flags
@@ -990,10 +968,10 @@ planesize	EQU	50
 	
 plane_vertex
 	dc.w	4
-	dc.w	-planesize,	planesize,	0
-	dc.w	planesize,	planesize,	0
-	dc.w	planesize,	-planesize,	0
-	dc.w	-planesize,	-planesize,	0
+	dc.w	-planesize,	planesize,	10
+	dc.w	planesize,	planesize,	10
+	dc.w	planesize,	-planesize,	10
+	dc.w	-planesize,	-planesize,	10
 
 plane_rotated
 	ds.w	4*4
