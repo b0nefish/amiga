@@ -3,7 +3,7 @@
 
 	include	/spacecut/startup.s
 
-height	EQU	200
+height	EQU	160
 zobs	EQU	-256
 
 mainloop
@@ -324,12 +324,12 @@ fill	move.l	doublebuffer(pc),a0
 plane	lea	plane_params(pc),a0
 	lea	plane_rotated(pc),a1
 	
-	movem.w	8(a1),d0-d2	
+	movem.w	8(a1),d0-d2	;
 	sub.w	0(a1),d0	; x1
 	sub.w	2(a1),d1	; y1
 	sub.w	4(a1),d2	; z1
 	
-	movem.w	8(a1),d3-d5
+	movem.w	8(a1),d3-d5	;
 	sub.w	16(a1),d3	; x2
 	sub.w	18(a1),d4	; y2
 	sub.w	20(a1),d5	; z2
@@ -339,18 +339,17 @@ plane	lea	plane_params(pc),a0
 	muls.w	d5,d6		;
 	muls.w	d2,d7		;
 	sub.l	d7,d6		; d6 = A = y1z2 - y2z1 	
-
 	muls.w	d3,d2		;
 	muls.w	d0,d5		;
 	sub.l	d5,d2		; d2 = B = z1x2 - z2x1 	
-
 	muls.w	d4,d0		;
 	muls.w	d1,d3		;
 	sub.l	d3,d0		; d0 = C = x1y2 - x2y1 	
 
-	asr.l	#7,d6		;
-	asr.l	#7,d2		;
-	asr.l	#7,d0		;
+	moveq	#8,d7		;
+	asr.l	d7,d6		;
+	asr.l	d7,d2		;
+	asr.l	d7,d0		;
 	move.w	d6,0(a0)	; A
 	move.w	d2,2(a0)	; B 
 	move.w	d0,4(a0)	; C
@@ -361,7 +360,7 @@ plane	lea	plane_params(pc),a0
 	add.l	d6,d2		;
 	add.l	d2,d0		;
 	neg.l	d0		;
-	asr.l	#7,d0		;
+	asr.l	d7,d0		;
 	move.l	d0,6(a0)	; d = -(Ax + By + Cz)
  
 	;----
@@ -627,30 +626,7 @@ fill_mask
 
 	;---- animate
 	
-animate	lea	sincos16(pc),a0
-	lea	90*2(a0),a1
-	lea	cube_xorigin(pc),a2
-	movem.w	alpha(pc),d0-d2
-	add.w	d0,d0
-	add.w	d1,d1
-	add.w	d2,d2
-	move.w	(a0,d0.w),d3
-	muls.w	#40,d3
-	add.l	d3,d3
-	swap	d3
-	move.w	(a0,d2.w),d4
-	muls.w	#30,d4
-	add.l	d4,d4
-	swap	d4
-	move.w	(a1,d1.w),d5
-	muls.w	#10,d5
-	add.l	d5,d5
-	swap	d5
-	movem.w	d3-d5,(a2)
-	
-	;----
-
-	movem.w	alpha(pc),d0-d2
+animate	movem.w	alpha(pc),d0-d2
 	move.w	#360,d3
 	addq.w	#1,d0
 	addq.w	#2,d1
@@ -693,25 +669,21 @@ animate	lea	sincos16(pc),a0
 	swap	d1
 	move.w	d1,bitplaneptr-copperlist+26(a0)
 
-	;---- sync
+	;---- vbsync
 
-	;move.w	#0,$180(a6)
-
-
-
-.wvbl	btst.b	#6,2(a6)
-	bne.b	.wvbl
+.vbsync	btst.b	#6,2(a6)
+	bne.b	.vbsync
 	move.l	$4(a6),d0
 	andi.l	#$1ff00,d0
 	cmpi.l	#$13700,d0
-	bne.b	.wvbl
+	bne.b	.vbsync
 
-	;move.w	#$543,$180(a6)
-	
 	;----
 
 	btst.b	#6,$bfe001
 	bne.w	mainloop
+
+	;----
 	
 leave	rts
 
@@ -827,22 +799,6 @@ LF	SET	($f0&$55)+($0f&$aa)	; A XOR C
 	
 .done	rts
 
-	;---- plot
-
-plot	movem.l	d0-d2/a0,-(sp)
-	move.l	doublebuffer(pc),a0
-	lea	40*height*3(a0),a0
-	addi.w	#320/2,d0
-	addi.w	#height/2,d1
-	move.b	d0,d2
-	lsr.w	#3,d0
-	mulu.w	#40,d1
-	add.w	d0,d1
-	not.b	d2
-	bset.b	d2,(a0,d1.w)
-	movem.l	(sp)+,d0-d2/a0
-	rts
-
 	;---- copperlist
 	
 copperlist
@@ -854,13 +810,13 @@ copperlist
 	dc.w	$102,0
 	dc.w	$104,0
 	dc.w	$180,0
-	dc.w	$182,$f00
-	dc.w	$184,$0f0
-	dc.w	$186,$00f
-	dc.w	$188,$113
-	dc.w	$18a,$513
-	dc.w	$18c,$051
-	dc.w	$18e,$002
+	dc.w	$182,$ffa	; front colours
+	dc.w	$184,$8b8	;
+	dc.w	$186,$dc9	;
+	dc.w	$188,$015	; cut plane colour
+	dc.w	$18a,$ffa-$662	; back colours
+	dc.w	$18c,$8b8-$662	;
+	dc.w	$18e,$dc9-$662	; 
 	dc.w	$190,$fff
 	dc.w	$192,$fff
 	dc.w	$194,$fff
@@ -881,11 +837,16 @@ bitplaneptr
 	dc.w	$ec,0
 	dc.w	$ee,0
 
+	dc.w	$4f01,$fffe
+	dc.w	$180,$f
 	dc.w	$5001,$fffe
 	dc.w	$100,$3200
-	dc.w	$ffdf,$fffe
-	dc.w	$2001,$fffe
+	dc.w	$180,0
+	dc.w	$f001,$fffe
 	dc.w	$100,$0200
+	dc.w	$180,$f
+	dc.w	$f101,$fffe
+	dc.w	$180,0
 	
 	dc.l	-2
 
@@ -900,15 +861,6 @@ doublebuffer
 alpha	ds.w	1	; z rotate angle
 beta	ds.w	1	; x rotate angle
 theta	ds.w	1	; y rotate angle
-
-cube_xorigin
-	ds.w	1
-
-cube_yorigin
-	ds.w	1
-
-cube_zorigin
-	ds.w	1
 
 	;---- 3d datas
 	
@@ -969,10 +921,10 @@ planesize	EQU	50
 	
 plane_vertex
 	dc.w	4
-	dc.w	-planesize,	planesize,	10
-	dc.w	planesize,	planesize,	10
-	dc.w	planesize,	-planesize,	10
-	dc.w	-planesize,	-planesize,	10
+	dc.w	-planesize,	planesize,	-20
+	dc.w	planesize,	planesize,	-20
+	dc.w	planesize,	-planesize,	-20
+	dc.w	-planesize,	-planesize,	-20
 
 plane_rotated
 	ds.w	4*4
@@ -999,5 +951,4 @@ bitplane1
 	ds.w	20*height*4
 	
 bitplane2
-	ds.w	20*height*4
-	
+	ds.w	20*height*4	
