@@ -346,28 +346,27 @@ plane	lea	plane_params(pc),a0
 	muls.w	d1,d3		;
 	sub.l	d3,d0		; d0 = C = x1y2 - x2y1 	
 
-	moveq	#8,d7		;
+	moveq	#8,d7		; k = 256
 	asr.l	d7,d6		;
 	asr.l	d7,d2		;
 	asr.l	d7,d0		;
-	move.w	d6,0(a0)	; A
-	move.w	d2,2(a0)	; B 
-	move.w	d0,4(a0)	; C
+	move.w	d6,0(a0)	; A/k
+	move.w	d2,2(a0)	; B/k 
+	move.w	d0,4(a0)	; C/k
 	
-	muls.w	0(a1),d6	; Ax
-	muls.w	2(a1),d2	; By
-	muls.w	4(a1),d0	; Cz
+	muls.w	0(a1),d6	; AX/k
+	muls.w	2(a1),d2	; BY/k
+	muls.w	4(a1),d0	; CZ/k
 	add.l	d6,d2		;
 	add.l	d2,d0		;
 	neg.l	d0		;
-	asr.l	d7,d0		;
-	move.l	d0,6(a0)	; d = -(Ax + By + Cz)
+	move.l	d0,6(a0)	; d/k = -(AX + BY + CZ) / k
  
 	;----
 
 	move.w	#zobs,d0	;
-	muls.w	4(a0),d0	; d0 = CZo
-	add.l	6(a0),d0	; d0 = CZo + d
+	muls.w	4(a0),d0	;
+	add.l	6(a0),d0	; d0 = (CZo + d) / k
 
 	;---- ray/plane intersect
 
@@ -383,13 +382,13 @@ ray_plane_intersect
 	muls.w	2(a0),d2	; 
 	muls.w	4(a0),d3	; 
 	add.l	d3,d2		;
-	add.l	d2,d1		;
+	add.l	d2,d1		; d1 = (AXp + BYp + C(Zp - Zo)) / k
 	move.w	4(a1),d2	; 
 	subi.w	#zobs,d2	; 
-	muls.w	d0,d2		; 
+	muls.w	d0,d2		; d2 = ((Zp - Zo) * (CZo + d)) / k 
 	tst.w	d1		; 
 	beq.b	.zero		; 
-	divs.w	d1,d2		;
+	divs.w	d1,d2		; d2 = d2 / d1 
 	ext.l	d2		;
 .zero	move.l	#zobs,d1	;
 	sub.l	d2,d1		;
@@ -440,37 +439,37 @@ vector_plane_intersect
 	muls.w	4(a0),d2	;
 	add.l	d2,d1		;
 	add.l	d1,d0		;
-	add.l	6(a0),d0	;
+	add.l	6(a0),d0	; d0 = (AXP1 + BYP1 + CZP1  + d) / k
 
 	movem.w	(a4),d1-d3	; P1(X,Y,Z)
 	movem.w	(a5),d4-d6	; P2(X,Y,Z)
-	sub.w	d1,d4		; PX2 - PX1
-	sub.w	d2,d5		; PY2 - PY1
-	sub.w	d3,d6		; PZ2 - PZ1
+	sub.w	d1,d4		; 
+	sub.w	d2,d5		; 
+	sub.w	d3,d6		; 
 	move.w	d4,d1		;
 	move.w	d5,d2		;
 	move.w	d6,d3		;
-	muls.w	0(a0),d1	; 
+	muls.w	0(a0),d1	;  
 	muls.w	2(a0),d2	; 
 	muls.w	4(a0),d3	; 
 	add.l	d3,d2		;
-	add.l	d2,d1		;
+	add.l	d2,d1		; d1 = (A(XP2-XP1)+B(YP2-YP1)+C(ZP2-ZP1)) / k
 
-	muls.w	d0,d4		;
-	muls.w	d0,d5		;
-	muls.w	d0,d6		; 
+	muls.w	d0,d4		; d4 = ((XP2-XP1) * (AXP1+BYP1+CZP1+d)) / k 
+	muls.w	d0,d5		; d5 = ((YP2-YP1) * (AXP1+BYP1+CZP1+d)) / k
+	muls.w	d0,d6		; d6 = ((ZP2-ZP1) * (AXP1+BYP1+CZP1+d)) / k
 	tst.w	d1		; 
 	beq.b	.zero		; 
-	divs.w	d1,d4		;
-	divs.w	d1,d5		;
-	divs.w	d1,d6		;
+	divs.w	d1,d4		; d4 = d4 / d1
+	divs.w	d1,d5		; d5 = d5 / d1
+	divs.w	d1,d6		; d6 = d6 / d1
 	ext.l	d4		;
 	ext.l	d5		;
 	ext.l	d6		;
 .zero	movem.w	(a4),d1-d3	;
-	sub.l	d4,d1		; d1 = Xi
-	sub.l	d5,d2		; d2 = Yi
-	sub.l	d6,d3		; d3 = Zi
+	sub.l	d4,d1		; XI = XP1 - d4
+	sub.l	d5,d2		; YI = YP1 - d5 
+	sub.l	d6,d3		; ZI = ZP1 - d6
 	movem.w	d1-d3,(a3)	; save cut point coordinates
 	lea	8(a3),a3	;
 
