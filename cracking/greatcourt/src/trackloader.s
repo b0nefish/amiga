@@ -5,27 +5,27 @@
 
 	include	startup.s
 
-	lea	target,a0
-	lea	filetable(pc),a1
-	moveq	#0,d0		; file index
-	lsl.w	#4,d0
-	lea	(a1,d0.w),a1
-	jsr	loadfile(pc)
-	move.l	d0,length
-	rts
+	;lea	target,a0
+	;lea	filetable(pc),a1
+	;moveq	#0,d0		; file index
+	;lsl.w	#4,d0
+	;lea	(a1,d0.w),a1
+	;jsr	loadfile(pc)
+	;move.l	d0,length
+	;rts
 
 	;----
 	; Files ripper
 
 ripper	lea	target(pc),a0	;
 	lea	filetable(pc),a1;
-	lea	$0*20(a1),a1	; start file pointer
+	lea	$8*16(a1),a1	; start file pointer
 	moveq	#0,d6		;
-	move.w	#10-1,d7	; read 10 files	
+	move.w	#5-1,d7		; read 10 files	
 .loop	jsr	loadfile(pc)	; load
 	add.l	d0,d6		;
 	lea	(a0,d0.l),a0	; update target pointer
-	lea	20(a1),a1	; next file
+	lea	16(a1),a1	; next file
 	dbf	d7,.loop	;
 	move.l	d6,length	; return length
 	rts
@@ -91,7 +91,7 @@ loadfile
 
 	;----
 
-	move.l	4(a1),d0	; return file length
+	move.l	8(a1),d0	; return file length
 .quit	movem.l	(sp)+,d1-a6	;
 	rts			; quit loader
 
@@ -175,7 +175,7 @@ load	movem.l	d0-a3,-(sp)
 
 	move.w	#$4000,$24(a6)
 
-	;---- Twinworld Track Decoder
+	;---- Greatcourts Track Decoder
 	
 mask	EQU	$55555555
 
@@ -189,14 +189,14 @@ mask	EQU	$55555555
 	
 	lea	10(a0),a0	;
 	lea	decode(pc),a1	;
-	move.l	#1508-1,d7	; 1 track = 6032 bytes
-lc4c52e	movem.l	(a0)+,d0/d1	;
+	move.w	#1508-1,d7	; 1 track = 6032 bytes
+.loop	movem.l	(a0)+,d0/d1	;
 	and.l	d6,d0		;
 	and.l	d6,d1		;
 	add.l	d0,d0		;
 	or.l	d1,d0		;
 	move.l	d0,(a1)+	;
-	dbf	d7,lc4c52e	;
+	dbf	d7,.loop	;
 
 	movem.l	(sp)+,d0-a3	;
 	rts			;
@@ -207,8 +207,8 @@ length
 	ds.l	1
 
 filetable
+	incbin	/bin/filetable
 	dc.l	0,0,$d2f0,1	; bootstrap
-	;incbin	/bin/filetable
 
 trackinfo
 	ds.l	1
@@ -219,6 +219,6 @@ rawdata	ds.w	readtracklen
 decode	ds.b	6032
 	dc.b	'sebo'
 
-target	ds.b	$d2f0
+target	ds.b	$8a3c+$b258+$8e84+$700+$4ac
 kk	dc.b	'sebo'	
 
