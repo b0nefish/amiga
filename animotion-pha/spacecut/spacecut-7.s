@@ -10,10 +10,13 @@ mainloop
 	
 	;---- clear bitmap
 
-	move.l	doublebuffer(pc),$54(a6)
+	move.l	doublebuffer(pc),a0
+	lea	10(a0),a0
+	move.l	a0,$54(a6)
 	move.l	#(%100000000)<<16,$40(a6)
-	move.l	#0,$64(a6)	
-	move.w	#((height*4)<<6)+20,$58(a6)
+	move.w	#20,$64(a6)
+	move.w	#20,$66(a6)	
+	move.w	#((height*4)<<6)+10,$58(a6)
 	
 	;---- cube reset
 
@@ -306,15 +309,15 @@ draw_plane
 	;---- fill cube and cut plane
 
 fill	move.l	doublebuffer(pc),a0
-	lea	(40*height*3)-2(a0),a0
+	lea	(40*height*3)-2-10(a0),a0
 .wblt	btst.b	#6,2(a6)
 	bne.b	.wblt
 	move.l	a0,$50(a6)
 	move.l	a0,$54(a6)
-	move.w	#0,$64(a6)
-	move.w	#0,$66(a6)	
+	move.w	#20,$64(a6)
+	move.w	#20,$66(a6)	
 	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
-	move.w	#((height*3)<<6)+20,$58(a6)	
+	move.w	#((height*3)<<6)+10,$58(a6)	
 
 	;---- cut plane parameters
 	;
@@ -599,29 +602,29 @@ draw_mask
 
 fill_mask
 	move.l	doublebuffer(pc),a0
-	lea	(40*height*4)-2(a0),a0	
+	lea	(40*height*4)-2-10(a0),a0	
 .wblt1	btst.b	#6,2(a6)
 	bne.b	.wblt1
 	move.l	a0,$50(a6)
 	move.l	a0,$54(a6)
-	move.w	#0,$64(a6)
-	move.w	#0,$66(a6)	
+	move.w	#20,$64(a6)
+	move.w	#20,$66(a6)	
 	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
-	move.w	#(height<<6)+20,$58(a6)	
+	move.w	#(height<<6)+10,$58(a6)	
 
 	move.l	doublebuffer(pc),a0
-	lea	(40*height*2)(a0),a0	
+	lea	(40*height*2)+10(a0),a0	
 	lea	(40*height)(a0),a1
 .wblt2	btst.b	#6,2(a6)
 	bne.b	.wblt2
 	move.l	a1,$4c(a6)
 	move.l	a0,$50(a6)
 	move.l	a0,$54(a6)
-	move.w	#0,$62(a6)
-	move.w	#0,$64(a6)
-	move.w	#0,$66(a6)	
+	move.w	#20,$62(a6)
+	move.w	#20,$64(a6)
+	move.w	#20,$66(a6)	
 	move.l	#(((%1101<<8)+%00110000)<<16),$40(a6)
-	move.w	#(height<<6)+20,$58(a6)	
+	move.w	#(height<<6)+10,$58(a6)	
 
 	;---- animate
 	
