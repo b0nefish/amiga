@@ -105,18 +105,23 @@ rotate_cube
 
 	;---- screening
 	
-	move.w	d2,d3
-	subi.w	#zobs,d3	; PBz = Bz - Oz + Pz
-	beq.b	.done
-	ext.l	d0
-	ext.l	d1
-	asl.l	#8,d0
-	asl.l	#8,d1
-	divs.w	d3,d0		; PBx * (Oz - Pz) / PBz
-	divs.w	d3,d1		; PBy * (Oz - Pz) / PBz
-.done	movem.w	d0-d2,(a1)	; push rotated + projected point
-	lea	8(a1),a1	
-	dbf	d7,rotate_cube
+	moveq	#8+3,d4		; k = 8 (scaling value)
+	move.w	d2,d3		;
+	subi.w	#zobs,d3	;
+	beq.b	.done		;
+	asl.w	#3,d3		; 
+	ext.l	d0		;
+	ext.l	d1		;
+	asl.l	d4,d0		;
+	asl.l	d4,d1		;
+	divs.w	d3,d0		; P'x = - k(Px * Oz) / k(Pz - Oz)  
+	divs.w	d3,d1		; P'y = - k(Py * Oz) / k(Pz - Oz)
+.done	neg.w	d0		;
+	neg.w	d1		;
+	movem.w	d0-d2,(a1)	; push rotated + projected point
+
+	lea	8(a1),a1	;	
+	dbf	d7,rotate_cube	;
  
 	;---- plane 3d rotations
 	
@@ -172,18 +177,23 @@ rotate_plane
 
 	;---- screening
 	
-	move.w	d2,d3
-	subi.w	#zobs,d3	; PBz = Bz - Oz + Pz
-	beq.b	.done
-	ext.l	d0
-	ext.l	d1
-	asl.l	#8,d0
-	asl.l	#8,d1
-	divs.w	d3,d0		; PBx * (Oz - Pz) / PBz
-	divs.w	d3,d1		; PBy * (Oz - Pz) / PBz
-.done	movem.w	d0-d2,(a1)	; push rotated + projected point
-	lea	8(a1),a1
-	dbf	d7,rotate_plane
+	moveq	#8+3,d4		; k = 8 (scaling value)
+	move.w	d2,d3		;
+	subi.w	#zobs,d3	;
+	beq.b	.done		;
+	asl.w	#3,d3		; 
+	ext.l	d0		;
+	ext.l	d1		;
+	asl.l	d4,d0		;
+	asl.l	d4,d1		;
+	divs.w	d3,d0		; P'x = - k(Px * Oz) / k(Pz - Oz)  
+	divs.w	d3,d1		; P'y = - k(Py * Oz) / k(Pz - Oz)
+.done	neg.w	d0		;
+	neg.w	d1		;
+	movem.w	d0-d2,(a1)	; push rotated + projected point
+
+	lea	8(a1),a1	;
+	dbf	d7,rotate_plane	;
 	
 	;---- face visibility
 	
