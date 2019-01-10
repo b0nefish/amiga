@@ -103,12 +103,12 @@ rotate_cube
 	move.w	d4,d0		; d0 = OPx'''
 	move.w	d6,d2		; d2 = OPz'''
 
-	;---- screening
+	;---- projection
 	
-	moveq	#8+3,d4		; k = 8 (scaling value)
 	move.w	d2,d3		;
 	subi.w	#zobs,d3	;
 	beq.b	.done		;
+	moveq	#8+3,d4		; k = 8 (scaling value)
 	asl.w	#3,d3		; 
 	ext.l	d0		;
 	ext.l	d1		;
@@ -116,9 +116,7 @@ rotate_cube
 	asl.l	d4,d1		;
 	divs.w	d3,d0		; P'x = - k(Px * Oz) / k(Pz - Oz)  
 	divs.w	d3,d1		; P'y = - k(Py * Oz) / k(Pz - Oz)
-.done	neg.w	d0		;
-	neg.w	d1		;
-	movem.w	d0-d2,(a1)	; push rotated + projected point
+.done	movem.w	d0-d2,(a1)	; push rotated + projected point
 
 	lea	8(a1),a1	;	
 	dbf	d7,rotate_cube	;
@@ -134,7 +132,7 @@ rotate_plane
 	movem.w	(a0)+,d0-d2
 
 .z_rotate
-	move.w	alpha(pc),d4
+	move.w	phi1(pc),d4
 	add.w	d4,d4
 	move.w	(_sin,d4.w),d3	; d3 = sin(alpha)
 	move.w	(_cos,d4.w),d4	; d4 = cos(alpha)
@@ -155,7 +153,7 @@ rotate_plane
 	move.w	d6,d1		; d1 = OPy'
 
 .y_rotate
-	move.w	theta(pc),d4
+	move.w	phi2(pc),d4
 	add.w	d4,d4
 	move.w	(_sin,d4.w),d3	; d3 = sin(theha)
 	move.w	(_cos,d4.w),d4	; d4 = cos(theta)
@@ -175,12 +173,12 @@ rotate_plane
 	move.w	d4,d0		; d0 = OPx'''
 	move.w	d6,d2		; d2 = OPz'''
 
-	;---- screening
+	;---- projection
 	
-	moveq	#8+3,d4		; k = 8 (scaling value)
 	move.w	d2,d3		;
 	subi.w	#zobs,d3	;
 	beq.b	.done		;
+	moveq	#8+3,d4		; k = 8 (scaling value)
 	asl.w	#3,d3		; 
 	ext.l	d0		;
 	ext.l	d1		;
@@ -188,9 +186,7 @@ rotate_plane
 	asl.l	d4,d1		;
 	divs.w	d3,d0		; P'x = - k(Px * Oz) / k(Pz - Oz)  
 	divs.w	d3,d1		; P'y = - k(Py * Oz) / k(Pz - Oz)
-.done	neg.w	d0		;
-	neg.w	d1		;
-	movem.w	d0-d2,(a1)	; push rotated + projected point
+.done	movem.w	d0-d2,(a1)	; push rotated + projected point
 
 	lea	8(a1),a1	;
 	dbf	d7,rotate_plane	;
@@ -638,21 +634,29 @@ fill_mask
 
 	;---- animate
 	
-animate	movem.w	alpha(pc),d0-d2
-	move.w	#360,d3
+animate	movem.w	alpha(pc),d0-d4
+	move.w	#360,d7
 	addq.w	#1,d0
-	addq.w	#2,d1
+	addq.w	#3,d1
 	addq.w	#1,d2
-.clip1	cmp.w	d3,d0
+	addq.w	#1,d3
+	addq.w	#1,d4
+.clip1	cmp.w	d7,d0
 	blt.b	.clip2
-	sub.w	d3,d0
-.clip2	cmp.w	d3,d1
+	sub.w	d7,d0
+.clip2	cmp.w	d7,d1
 	blt.b	.clip3
-	sub.w	d3,d1
-.clip3	cmp.w	d3,d2
+	sub.w	d7,d1
+.clip3	cmp.w	d7,d2
+	blt.b	.clip4
+	sub.w	d7,d2
+.clip4	cmp.w	d7,d3
+	blt.b	.clip5
+	sub.w	d7,d3
+.clip5	cmp.w	d7,d4
 	blt.b	.done
-	sub.w	d3,d2
-.done	movem.w	d0-d2,alpha
+	sub.w	d7,d4
+.done	movem.w	d0-d4,alpha
 
 	;---- screen swap
 	
@@ -810,7 +814,7 @@ LF	SET	($f0&$55)+($0f&$aa)	; A XOR C
 	move.w	d3,$58(a6)	
 	
 .done	rts
-
+	
 	;---- copperlist
 	
 copperlist
@@ -870,9 +874,11 @@ doublebuffer
 
 	;----
 	
-alpha	ds.w	1	; z rotate angle
-beta	ds.w	1	; x rotate angle
-theta	ds.w	1	; y rotate angle
+alpha	dc.w	0	; rotate angles
+beta	dc.w	300	; 
+theta	dc.w	66	; 
+phi1	dc.w	50	;
+phi2	dc.w	250	;
 
 	;---- 3d datas
 	
@@ -880,15 +886,15 @@ boxsize	equ	20
 	
 cube_vertex
 	dc.w	8
-	dc.w	-boxsize,	boxsize+30,	boxsize
-	dc.w	boxsize,	boxsize+30,	boxsize
-	dc.w	boxsize,	-boxsize+30,	boxsize
-	dc.w	-boxsize,	-boxsize+30,	boxsize
+	dc.w	-boxsize,	boxsize+30,	boxsize+20
+	dc.w	boxsize,	boxsize+30,	boxsize+20
+	dc.w	boxsize,	-boxsize+30,	boxsize+20
+	dc.w	-boxsize,	-boxsize+30,	boxsize+20
 	
-	dc.w	-boxsize,	boxsize+30,	-boxsize
-	dc.w	boxsize,	boxsize+30,	-boxsize
-	dc.w	boxsize,	-boxsize+30,	-boxsize
-	dc.w	-boxsize,	-boxsize+30,	-boxsize
+	dc.w	-boxsize,	boxsize+30,	-boxsize+20
+	dc.w	boxsize,	boxsize+30,	-boxsize+20
+	dc.w	boxsize,	-boxsize+30,	-boxsize+20
+	dc.w	-boxsize,	-boxsize+30,	-boxsize+20
 	
 cube_rotated
 	ds.w	8*4		; X,Y,Z,flags
