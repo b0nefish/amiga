@@ -14,7 +14,6 @@ mainloop
 	lea	10(a0),a0
 	move.l	a0,$54(a6)
 	move.l	#(%100000000)<<16,$40(a6)
-	move.w	#20,$64(a6)
 	move.w	#20,$66(a6)	
 	move.w	#((height*4)<<6)+10,$58(a6)
 	
@@ -200,7 +199,7 @@ rotate_plane
 	subq.w	#1,d7		; d7 = face count
 
 .loop	move.l	(a2)+,d6	;
-	swap	d6		; d6 = [colour].w [linecount].w
+	swap	d6		; d6 = [color].w [linecount].w
 	subq.w	#1,d6		;
 
 	lea	0(a2),a3	;
@@ -252,7 +251,7 @@ rotate_plane
 .e	tst.l	d0		;
 	bmi.b	.next		;
 	lsl.w	#4,d1		;
-	eor.w	d6,-8(a1,d1.w)	; update cube colour
+	eor.w	d6,-8(a1,d1.w)	; update line color
 .next	swap	d6		;
 	dbf	d6,.xoring	;
 	dbf	d7,.loop	;
@@ -273,8 +272,8 @@ draw_cube
 	move.l	#$ffff8000,$72(a6)	; bltbdat + bltadat
 	move.l	#$ffffffff,$44(a6)	; bltafwm + bltalwm
 
-.loop	movem.w	0(a1),d4-d5		;
-	move.w	8(a1),d6		;
+.loop	movem.w	0(a1),d4-d5		; get points
+	move.w	8(a1),d6		; get line color
 	beq.b	.next			;
 	lsl.w	#3,d4			;
 	lsl.w	#3,d5			;
@@ -284,7 +283,7 @@ draw_cube
 	addi.w	#height/2,d1		; Ay
 	addi.w	#320/2,d2		; Bx
 	addi.w	#height/2,d3		; By
-	clr.w	8(a1)			; clear colour index
+	clr.w	8(a1)			; clear color index
 	jsr	draw1px(pc)		;
 .next	lea	16(a1),a1		;
 	dbf	d7,.loop		;
@@ -495,7 +494,8 @@ cut_vectors
 	lea	cube_vectors+2(pc),a0
 	lea	cube_cutvectors(pc),a1
 	lea	cube_faces(pc),a2
-	move.w	(a2)+,d7
+	move.w	#8,d5		; color for mask object
+	move.w	(a2)+,d7	;
 	subq.w	#1,d7		; face count
 
 .loop0	btst.b	#0,4(a2)	; is the face visible ?
@@ -512,7 +512,7 @@ cut_vectors
 .a	lsl.w	#4,d0		;
 	btst.b	#1,-10(a0,d0.w)	; test if vector is behind cut plane 
 	bne.b	.b		;
-	eori.w	#8,-6(a0,d0.w)	; set vector visible
+	eor.w	d5,-8(a0,d0.w)	; set vector visible
 .b	btst.b	#0,-10(a0,d0.w)	; test if vector has cut point
 	dbne	d6,.loop1	;
 
@@ -527,13 +527,13 @@ cut_vectors
 .c	lsl.w	#4,d1		;
 	btst.b	#1,-10(a0,d1.w)	; test if vector is behind cut plane 
 	bne.b	.d		;
-	eori.w	#8,-6(a0,d1.w)	; set vector visible
+	eor.w	d5,-8(a0,d1.w)	; set vector visible
 .d	btst.b	#0,-10(a0,d1.w)	; test if vector has cut point
 	dbne	d6,.loop2	;
 
 	move.w	-12(a0,d0.w),0(a1)
 	move.w	-12(a0,d1.w),2(a1)
-	eori.w	#8,10(a1)	; set cut vector visible
+	eori.w	#8,8(a1)	; set cut vector visible
 	lea	16(a1),a1	;
 	addq.w	#1,-2(a0)	; increment vectors count	
 	
@@ -548,7 +548,7 @@ cut_vectors
 .e	lsl.w	#4,d0		;
 	btst.b	#1,-10(a0,d0.w)	; 
 	bne.b	.f		;
-	eori.w	#8,-6(a0,d0.w)	;
+	eor.w	d5,-8(a0,d0.w)	;
 .f	dbf	d6,.loop3	;
 
 .next	move.w	(a2),d0		;
@@ -572,7 +572,7 @@ draw_mask
 	move.l	#$ffff8000,$72(a6)
 	move.l	#$ffffffff,$44(a6)
 
-.loop	move.w	10(a1),d6	; get colour index
+.loop	move.w	8(a1),d6	; get color index
 	beq.b	.next		;
 	
 	movem.w	(a1),d4/d5	; get vector points	
@@ -600,7 +600,7 @@ draw_mask
 	addi.w	#height/2,d3	;
 	jsr	draw1px(pc)	; blit line
 
-.next	clr.w	10(a1)		; clear colour index
+.next	clr.w	8(a1)		; clear color index
 	lea	16(a1),a1	; next vector
 	dbf	d7,.loop	;
 
@@ -616,20 +616,6 @@ fill_mask
 	move.w	#20,$64(a6)
 	move.w	#20,$66(a6)	
 	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
-	move.w	#(height<<6)+10,$58(a6)	
-
-	move.l	doublebuffer(pc),a0
-	lea	(40*height*2)+10(a0),a0	
-	lea	(40*height)(a0),a1
-.wblt2	btst.b	#6,2(a6)
-	bne.b	.wblt2
-	move.l	a1,$4c(a6)
-	move.l	a0,$50(a6)
-	move.l	a0,$54(a6)
-	move.w	#20,$62(a6)
-	move.w	#20,$64(a6)
-	move.w	#20,$66(a6)	
-	move.l	#(((%1101<<8)+%00110000)<<16),$40(a6)
 	move.w	#(height<<6)+10,$58(a6)	
 
 	;---- animate
@@ -657,6 +643,22 @@ animate	movem.w	alpha(pc),d0-d4
 	blt.b	.done
 	sub.w	d7,d4
 .done	movem.w	d0-d4,alpha
+
+	;---- mask
+
+mask	move.l	doublebuffer(pc),a0
+	lea	(40*height*2)+10(a0),a0	
+	lea	(40*height)(a0),a1
+.wblt	btst.b	#6,2(a6)
+	bne.b	.wblt
+	move.l	a1,$4c(a6)
+	move.l	a0,$50(a6)
+	move.l	a0,$54(a6)
+	move.w	#20,$62(a6)
+	move.w	#20,$64(a6)
+	move.w	#20,$66(a6)	
+	move.l	#(((%1101<<8)+%00110000)<<16),$40(a6)
+	move.w	#(height<<6)+10,$58(a6)	
 
 	;---- screen swap
 	
@@ -694,7 +696,7 @@ animate	movem.w	alpha(pc),d0-d4
 	cmpi.l	#$13700,d0
 	bne.b	.vbsync
 
-	;----
+	;---- test lmb
 
 	btst.b	#6,$bfe001
 	bne.w	mainloop
@@ -812,7 +814,7 @@ LF	SET	($f0&$55)+($0f&$aa)	; A XOR C
 	move.l	a0,$48(a6)
 	move.l	a0,$54(a6)
 	move.w	d3,$58(a6)	
-	
+
 .done	rts
 	
 	;---- copperlist
@@ -826,11 +828,11 @@ copperlist
 	dc.w	$102,0
 	dc.w	$104,0
 	dc.w	$180,0
-	dc.w	$182,$ffa	; front colours
+	dc.w	$182,$ffa	; front colors
 	dc.w	$184,$8b8	;
 	dc.w	$186,$dc9	;
-	dc.w	$188,$015	; cut plane colour
-	dc.w	$18a,$ffa-$662	; back colours
+	dc.w	$188,$015	; cut plane color
+	dc.w	$18a,$ffa-$662	; back colors
 	dc.w	$18c,$8b8-$662	;
 	dc.w	$18e,$dc9-$662	; 
 	dc.w	$190,$fff
@@ -898,6 +900,9 @@ cube_vertex
 	
 cube_rotated
 	ds.w	8*4		; X,Y,Z,flags
+				; flags :
+				; %00 => point is behind cut plane
+				; %01 => point if front of cut plane
 
 cube_cutpoints
 	ds.w	12*4
@@ -909,16 +914,16 @@ cube_vectors
 	dc.w	1,2,0,0,0,0,0,0	; word 1 => P2
 	dc.w	2,3,0,0,0,0,0,0	; word 2 => P3 (cut point)
 	dc.w	3,0,0,0,0,0,0,0	; word 3 => flags
-				; word 4 => cube colour index
-	dc.w	5,4,0,0,0,0,0,0	; word 5 => mask colour index 
+				; word 4 => color index
+	dc.w	5,4,0,0,0,0,0,0	; word 5 =>  
 	dc.w	4,7,0,0,0,0,0,0	; word 6 => 
 	dc.w	7,6,0,0,0,0,0,0	; word 7 => 
 	dc.w	6,5,0,0,0,0,0,0 ;
-	
-	dc.w	0,4,0,0,0,0,0,0 ;
-	dc.w	1,5,0,0,0,0,0,0	;
-	dc.w	2,6,0,0,0,0,0,0	;
-	dc.w	3,7,0,0,0,0,0,0	;	
+				;
+	dc.w	0,4,0,0,0,0,0,0 ; flags :
+	dc.w	1,5,0,0,0,0,0,0	; %00 => vector not cutted front of cut plane
+	dc.w	2,6,0,0,0,0,0,0	; %01 => vector is cutted
+	dc.w	3,7,0,0,0,0,0,0	; %10 => vector not cutted behind cut plane	
 
 cube_cutvectors
 	ds.w	8*6		; cut vectors
@@ -949,7 +954,7 @@ plane_rotated
 
 plane_vectors
 	dc.w	4		; line count
-	dc.w	0,1,4,0		; p1,p2,colour
+	dc.w	0,1,4,0		; p1,p2,color
 	dc.w	1,2,4,0
 	dc.w	2,3,4,0
 	dc.w	3,0,4,0
