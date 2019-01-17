@@ -18,10 +18,10 @@ mainloop
 	move.w	#((height*5)<<6)+20,$58(a6)
 
 	;---- cube 3d rotations
-	
+
+rotate_cube	
 	lea	cube_vertex(pc),a0
 	lea	cube_rotated(pc),a1
-	lea	cube_screened(pc),a4
 	lea	sincos16(pc),a2
 	lea	90*2(a2),a3
 	move.w	(a0)+,d7
@@ -30,8 +30,7 @@ mainloop
 _sin	EQUR	a2
 _cos	EQUR	a3
 
-rotate_cube
-	movem.w	(a0)+,d0-d2
+.loop	movem.w	(a0)+,d0-d2
 
 .z_rotate
 	move.w	alpha(pc),d4
@@ -96,8 +95,6 @@ rotate_cube
 	move.w	d4,d0		; d0 = OPx'''
 	move.w	d6,d2		; d2 = OPz'''
 
-	movem.w	d0-d2,(a4)
-
 	;---- projection
 	
 	move.w	d2,d3		;
@@ -114,18 +111,17 @@ rotate_cube
 .done	movem.w	d0-d2,(a1)	; push rotated + projected point
 
 	lea	8(a1),a1	;
-	lea	8(a4),a4	;	
-	dbf	d7,rotate_cube	;
+	dbf	d7,.loop	;
  
-	;---- plane 3d rotations
-	
+	;---- mirror rotations
+
+rotate_mirror	
 	lea	plane_vertex(pc),a0
 	lea	plane_rotated(pc),a1
 	move.w	(a0)+,d7
 	subq.w	#1,d7
 
-rotate_plane
-	movem.w	(a0)+,d0-d2
+.loop	movem.w	(a0)+,d0-d2
 
 .z_rotate
 	move.w	phi1(pc),d4
@@ -148,8 +144,29 @@ rotate_plane
 	move.w	d4,d0		; d0 = OPx'
 	move.w	d6,d1		; d1 = OPy'
 
-.y_rotate
+.x_rotate
 	move.w	phi2(pc),d4
+	add.w	d4,d4
+	move.w	(_sin,d4.w),d3	; d3 = sin(beta)
+	move.w	(_cos,d4.w),d4	; d4 = cos(beta)
+	move.w	d3,d5
+	move.w	d4,d6
+	
+	muls.w	d1,d4		; d4 = OPy * cos(beta) * k
+	muls.w	d2,d3		; d3 = OPz * sin(beta) * k
+	muls.w	d2,d6		; d6 = OPz * cos(beta) * k
+	muls.w	d1,d5		; d5 = OPy * sin(beta) * k
+	add.l	d3,d4
+	sub.l	d5,d6
+	add.l	d4,d4
+	add.l	d6,d6
+	swap	d4
+	swap	d6
+	move.w	d4,d1		; d1 = OPy''
+	move.w	d6,d2		; d2 = OPz''
+
+.y_rotate
+	move.w	phi3(pc),d4
 	add.w	d4,d4
 	move.w	(_sin,d4.w),d3	; d3 = sin(theha)
 	move.w	(_cos,d4.w),d4	; d4 = cos(theta)
@@ -185,11 +202,11 @@ rotate_plane
 .done	movem.w	d0-d2,(a1)	; push rotated + projected point
 
 	lea	8(a1),a1	;
-	dbf	d7,rotate_plane	;
+	dbf	d7,.loop	;
 	
 	;---- face visibility
 	
-	lea	cube_rotated(pc),a0
+hidden	lea	cube_rotated(pc),a0
 	lea	cube_vectors+2(pc),a1
 	lea	cube_faces(pc),a2
 	move.w	(a2)+,d7
@@ -308,18 +325,26 @@ draw_plane
 .next	lea	2(a1),a1
 	dbf	d7,.loop
  
-	;---- fill cube and cut plane
+	;---- fill cube and mirror plane
 
-;fill	move.l	doublebuffer(pc),a0
-;	lea	(40*height*3)-2-10(a0),a0
-;.wblt	btst.b	#6,2(a6)
-;	bne.b	.wblt
-;	move.l	a0,$50(a6)
-;	move.l	a0,$54(a6)
-;	move.w	#20,$64(a6)
-;	move.w	#20,$66(a6)	
-;	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
-;	move.w	#((height*3)<<6)+10,$58(a6)	
+fill_pass_1
+	move.l	doublebuffer(pc),a0
+	lea	(40*height*3)-2-10(a0),a0
+.wblt	btst.b	#6,2(a6)
+	bne.b	.wblt
+	move.l	a0,$50(a6)
+	move.l	a0,$54(a6)
+	move.w	#20,$64(a6)
+	move.w	#20,$66(a6)	
+	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
+	move.w	#((height*3)<<6)+10,$58(a6)	
+
+	;----
+
+	lea	bplcon2(pc),a0
+	lea	colors(pc),a1
+	clr.w	2(a0)
+	move.w	#$222,6(a1)
 
 	;---- mirror plane parameters
 	;
@@ -349,8 +374,8 @@ plane	lea	plane_params(pc),a0
 	sub.l	d5,d2		; d2 = B = z1x2 - z2x1 	
 	muls.w	d4,d0		;
 	muls.w	d1,d3		;
-	sub.l	d3,d0		; d0 = C = x1y2 - x2y1 	
-	bpl.w	fill		;
+	sub.l	d3,d0		; d0 = C = x1y2 - x2y1
+	bpl.w	animate		;
 
 	moveq	#6,d7		; k = 64
 	asr.l	d7,d6		;
@@ -378,8 +403,8 @@ plane	lea	plane_params(pc),a0
 
 	;----
 	
-mirror	lea	cube_screened(pc),a1
-	lea	cube_mirror(pc),a2
+mirror	lea	cube_rotated(pc),a1
+	lea	cube_reflected(pc),a2
 	move.w	cube_vertex(pc),d7
 	subq.w	#1,d7
 
@@ -425,14 +450,14 @@ mirror	lea	cube_screened(pc),a1
 
 	;---- face visibility
 	
-ttt	lea	cube_mirror(pc),a0
+ttt	lea	cube_reflected(pc),a0
 	lea	cube_vectors+2(pc),a1
 	lea	cube_faces(pc),a2
 	move.w	(a2)+,d7
 	subq.w	#1,d7		; d7 = face count
 
 .loop	move.l	(a2)+,d6	; 
-	lsr.w	#1,d6		;
+	lsl.w	#3,d6		;
 	swap	d6		; d6 = [color].w [linecount].w
 	subq.w	#1,d6		;
 
@@ -494,7 +519,7 @@ ttt	lea	cube_mirror(pc),a0
 
 draw_cube_mirror
 	lea	cube_vectors(pc),a1
-	lea	cube_mirror(pc),a2
+	lea	cube_reflected(pc),a2
 	move.w	(a1)+,d7
 	subq.w	#1,d7
 
@@ -522,9 +547,10 @@ draw_cube_mirror
 .next	lea	16(a1),a1		;
 	dbf	d7,.loop		;
 
-	;---- fill all
+	;---- fill reflected cube
 
-fill	move.l	doublebuffer(pc),a0
+fill_pass_2
+	move.l	doublebuffer(pc),a0
 	lea	(40*height*5)-2-0(a0),a0
 .wblt	btst.b	#6,2(a6)
 	bne.b	.wblt
@@ -533,17 +559,25 @@ fill	move.l	doublebuffer(pc),a0
 	move.w	#0,$64(a6)
 	move.w	#0,$66(a6)	
 	move.l	#(((%1001<<8)+%11110000)<<16)+%10010,$40(a6)
-	move.w	#((height*5)<<6)+20,$58(a6)	
+	move.w	#((height*2)<<6)+20,$58(a6)	
+
+	;----
+
+	lea	bplcon2(pc),a0
+	lea	colors(pc),a1
+	bset.b	#6,3(a0)
+	move.w	#3,6(a1)
 
 	;---- animate
 	
-animate	movem.w	alpha(pc),d0-d4
+animate	movem.w	alpha(pc),d0-d5
 	move.w	#360,d7
 	addq.w	#1,d0
 	addq.w	#3,d1
 	addq.w	#1,d2
-	addq.w	#1,d3
-	addq.w	#1,d4
+	;addq.w	#1,d3
+	;addq.w	#2,d4
+	addq.w	#1,d5
 .clip1	cmp.w	d7,d0
 	blt.b	.clip2
 	sub.w	d7,d0
@@ -557,9 +591,12 @@ animate	movem.w	alpha(pc),d0-d4
 	blt.b	.clip5
 	sub.w	d7,d3
 .clip5	cmp.w	d7,d4
-	blt.b	.done
+	blt.b	.clip6
 	sub.w	d7,d4
-.done	movem.w	d0-d4,alpha
+.clip6	cmp.w	d7,d5
+	blt.b	.done
+	sub.w	d7,d5
+.done	movem.w	d0-d5,alpha
 
 	;---- screen swap
 	
@@ -569,29 +606,36 @@ animate	movem.w	alpha(pc),d0-d4
 	movem.l	d0-d1,(a0)
 	
 	lea	copperlist(pc),a0	
-	move.w	d1,bitplaneptr-copperlist+6(a0)
+	move.l	#40*height,d2
+
+	move.w	d1,bitplaneptr-copperlist+(8*1)+6(a0)
 	swap	d1
-	move.w	d1,bitplaneptr-copperlist+2(a0)
+	move.w	d1,bitplaneptr-copperlist+(8*1)+2(a0)
 	swap	d1
-	addi.l	#40*height,d1
-	move.w	d1,bitplaneptr-copperlist+14(a0)
+
+	add.l	d2,d1
+	move.w	d1,bitplaneptr-copperlist+(8*3)+6(a0)
 	swap	d1
-	move.w	d1,bitplaneptr-copperlist+10(a0)
+	move.w	d1,bitplaneptr-copperlist+(8*3)+2(a0)
 	swap	d1
-	addi.l	#40*height,d1
-	move.w	d1,bitplaneptr-copperlist+22(a0)
+
+	add.l	d2,d1
+	move.w	d1,bitplaneptr-copperlist+(8*0)+6(a0)
 	swap	d1
-	move.w	d1,bitplaneptr-copperlist+18(a0)
+	move.w	d1,bitplaneptr-copperlist+(8*0)+2(a0)
 	swap	d1
-	addi.l	#40*height,d1
-	move.w	d1,bitplaneptr-copperlist+30(a0)
+
+	add.l	d2,d1
+	move.w	d1,bitplaneptr-copperlist+(8*2)+6(a0)
 	swap	d1
-	move.w	d1,bitplaneptr-copperlist+26(a0)
+	move.w	d1,bitplaneptr-copperlist+(8*2)+2(a0)
 	swap	d1
-	addi.l	#40*height,d1
-	move.w	d1,bitplaneptr-copperlist+38(a0)
+
+	add.l	d2,d1
+	move.w	d1,bitplaneptr-copperlist+(8*4)+6(a0)
 	swap	d1
-	move.w	d1,bitplaneptr-copperlist+34(a0)
+	move.w	d1,bitplaneptr-copperlist+(8*4)+2(a0)
+	swap	d1
 
 	;---- vbsync
 
@@ -761,28 +805,20 @@ copperlist
 	dc.w	$94,$d0
 	dc.w	$100,$0200
 	dc.w	$102,0
-bplcon2	dc.w	$104,%1000000
-	dc.w	$180,0
+bplcon2	dc.w	$104,0
 
-	dc.w	$182,$0	 
-	dc.w	$184,$0	
-	dc.w	$186,$0	
-	dc.w	$188,$5
-	
-	dc.w	$18a,$c04	; reflected cube colors
-	dc.w	$18c,$504	;
-	dc.w	$18e,$204	; 
-	dc.w	$190,$fff	;
-
-	dc.w	$192,$f30	; cube colors
-	dc.w	$194,$c20	;
-	dc.w	$196,$810	;
-	dc.w	$198,$fff	;
-
-	dc.w	$19a,$fff
-	dc.w	$19c,$fff
-	dc.w	$19e,$fff
-	dc.w	$1a0,$fff
+colors	dc.w	$180,0
+	dc.w	$182,$000	 
+	dc.w	$184,$000	
+	dc.w	$186,$c03
+	dc.w	$188,$000
+	dc.w	$18a,$602	 
+	dc.w	$18c,$000	
+	dc.w	$18e,$401	 
+	dc.w	$190,$000	
+	dc.w	$192,$f30	 
+	dc.w	$194,$c20	
+	dc.w	$196,$810	
 
 bitplaneptr
 	dc.w	$e0,0
@@ -822,6 +858,7 @@ beta	dc.w	300	;
 theta	dc.w	66	; 
 phi1	dc.w	0	;
 phi2	dc.w	160	;
+phi3	dc.w	80	;
 
 	;---- 3d datas
 	
@@ -842,10 +879,7 @@ cube_vertex
 cube_rotated
 	ds.w	8*4
 
-cube_screened
-	ds.w	8*4
-
-cube_mirror
+cube_reflected
 	ds.w	8*4
 	
 cube_vectors
@@ -871,12 +905,12 @@ cube_cutvectors
 
 cube_faces
 	dc.w	6		; face count
-	dc.w	4,%0010,0,1,2,3,4
-	dc.w	4,%0010,0,5,6,7,8
-	dc.w	4,%1000,0,-5,-10,-1,9
-	dc.w	4,%1000,0,-3,11,-7,-12
-	dc.w	4,%1010,0,-9,-4,12,-6
-	dc.w	4,%1010,0,10,-8,-11,-2
+	dc.w	4,%01,0,1,2,3,4
+	dc.w	4,%01,0,5,6,7,8
+	dc.w	4,%10,0,-5,-10,-1,9
+	dc.w	4,%10,0,-3,11,-7,-12
+	dc.w	4,%11,0,-9,-4,12,-6
+	dc.w	4,%11,0,10,-8,-11,-2
 
 	;---- cut plane
 
@@ -884,20 +918,20 @@ planesize	EQU	40
 	
 plane_vertex
 	dc.w	4
-	dc.w	-planesize,	planesize,	-60
-	dc.w	planesize,	planesize,	-60
-	dc.w	planesize,	-planesize,	-60
-	dc.w	-planesize,	-planesize,	-60
+	dc.w	-planesize, planesize, -40
+	dc.w	planesize, planesize, -40
+	dc.w	planesize, -planesize, -40
+	dc.w	-planesize, -planesize, -40
 
 plane_rotated
 	ds.w	4*4
 
 plane_vectors
 	dc.w	4		; line count
-	dc.w	0,1,16,0	; p1,p2,color
-	dc.w	1,2,16,0
-	dc.w	2,3,16,0
-	dc.w	3,0,16,0
+	dc.w	0,1,%100,0	; p1,p2,color
+	dc.w	1,2,%100,0
+	dc.w	2,3,%100,0
+	dc.w	3,0,%100,0
 
 plane_params
 	ds.w	3		; A,B,C
