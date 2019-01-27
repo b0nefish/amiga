@@ -116,8 +116,8 @@ _cos	EQUR	a3
 	;---- mirror rotations
 
 rotate_mirror	
-	lea	plane_vertex(pc),a0
-	lea	plane_rotated(pc),a1
+	lea	mirror_vertices(pc),a0
+	lea	mirror_rotated(pc),a1
 	move.w	(a0)+,d7
 	subq.w	#1,d7
 
@@ -305,8 +305,8 @@ draw_cube
 	;---- draw plane
 
 draw_plane
-	lea	plane_vectors(pc),a1
-	lea	plane_rotated(pc),a2
+	lea	mirror_vectors(pc),a1
+	lea	mirror_rotated(pc),a2
 	move.w	(a1)+,d7
 	subq.w	#1,d7
 
@@ -351,8 +351,8 @@ fill_pass_1
 	; plane parametric equation :
 	; Ax + By + Cz + d = 0 
 
-plane	lea	plane_params(pc),a0
-	lea	plane_rotated(pc),a1
+plane	lea	mirror_params(pc),a0
+	lea	mirror_rotated(pc),a1
 	
 	movem.w	8(a1),d0-d2	;
 	sub.w	0(a1),d0	; x1
@@ -375,9 +375,9 @@ plane	lea	plane_params(pc),a0
 	muls.w	d4,d0		;
 	muls.w	d1,d3		;
 	sub.l	d3,d0		; d0 = C = x1y2 - x2y1
-	bpl.w	animate		;
+	bpl.w	animate		; mirror reflect nothing observable
 
-	moveq	#6,d7		; k = 64
+	moveq	#6,d7		; k = 64 (scaling value that fit 16 bits)
 	asr.l	d7,d6		;
 	asr.l	d7,d2		;
 	asr.l	d7,d0		;
@@ -391,15 +391,17 @@ plane	lea	plane_params(pc),a0
 	add.l	d6,d2		;
 	add.l	d2,d0		;
 	neg.l	d0		; d0 = d/k = -(AX + BY + CZ) / k
+	move.l	d0,8(a0)	;
  
 	;----
 
-	movem.w	0(a0),d1-d3	;
+	movem.w	0(a0),d0-d2	;
+	muls.w	d0,d0		;
 	muls.w	d1,d1		;
 	muls.w	d2,d2		;
-	muls.w	d3,d3		;
-	add.l	d3,d2		;
-	add.l	d2,d1		; d1 = (A²+B²+C²) / k²
+	add.l	d2,d1		;
+	add.l	d1,d0		; d0 = (A²+B²+C²) / k²
+	move.w	d0,6(a0)	;
 
 	;----
 	
@@ -408,42 +410,39 @@ mirror	lea	cube_rotated(pc),a1
 	move.w	cube_vertex(pc),d7
 	subq.w	#1,d7
 
-.loop	move.l	d7,-(sp)
+.loop	movem.w	(a1),d0-d2	;
+	muls.w	0(a0),d0	;
+	muls.w	2(a0),d1	;
+	muls.w	4(a0),d2	;
+	add.l	d2,d1		;
+	add.l	d1,d0		;
+	add.l	8(a0),d0	; d0 = (Ax + By + Cz + d) / k
 
-	movem.w	(a1),d2-d4	;
-	muls.w	0(a0),d2	;
-	muls.w	2(a0),d3	;
-	muls.w	4(a0),d4	;
-	add.l	d4,d3		;
-	add.l	d3,d2		;
-	add.l	d0,d2		; d2 = (Ax + By + Cz + d) / k
-
-	movem.w	0(a0),d5-d7	;
-	muls.w	d2,d5		; A(Ax + By + Cz + d) / k²
-	muls.w	d2,d6		; B(Ax + By + Cz + d) / k²
-	muls.w	d2,d7		; C(Ax + By + Cz + d) / k²
-	tst.w	d1		;
+	movem.w	(a0),d1-d4	;
+	muls.w	d0,d1		; A(Ax + By + Cz + d) / k²
+	muls.w	d0,d2		; B(Ax + By + Cz + d) / k²
+	muls.w	d0,d3		; C(Ax + By + Cz + d) / k²
+	tst.w	d4		;
 	beq.b	.zero		;
-	divs.w	d1,d5		;
-	divs.w	d1,d6		;
-	divs.w	d1,d7		;
-.zero	movem.w	(a1),d2-d4	;
-	sub.w	d5,d2		;
-	sub.w	d6,d3		;
-	sub.w	d7,d4		;
+	divs.w	d4,d1		;
+	divs.w	d4,d2		;
+	divs.w	d4,d3		;
+.zero	movem.w	(a1),d4-d6	;
+	sub.w	d1,d4		; x'
+	sub.w	d2,d5		; y'
+	sub.w	d3,d6		; z'
 
-	movem.w	(a1),d5-d7	;
-	sub.w	d2,d5		;
-	sub.w	d3,d6		;
-	sub.w	d4,d7		;		
-	sub.w	d5,d2		;	
-	sub.w	d6,d3		;
-	sub.w	d7,d4		;
-	movem.w	d2-d4,(a2)	;
+	movem.w	(a1),d0-d2	;
+	sub.w	d4,d0		;
+	sub.w	d5,d1		;
+	sub.w	d6,d2		;		
+	sub.w	d0,d4		; x''	
+	sub.w	d1,d5		; y''
+	sub.w	d2,d6		; z''
+	movem.w	d4-d6,(a2)	;
 
 	;jsr	plot(pc)
 	
-	move.l	(sp)+,d7
 	lea	8(a1),a1
 	lea	8(a2),a2
 	dbf	d7,.loop
@@ -912,30 +911,31 @@ cube_faces
 	dc.w	4,%11,0,-9,-4,12,-6
 	dc.w	4,%11,0,10,-8,-11,-2
 
-	;---- cut plane
+	;---- mirror plane
 
 planesize	EQU	40
 	
-plane_vertex
+mirror_vertices
 	dc.w	4
 	dc.w	-planesize, planesize, -40
 	dc.w	planesize, planesize, -40
 	dc.w	planesize, -planesize, -40
 	dc.w	-planesize, -planesize, -40
 
-plane_rotated
+mirror_rotated
 	ds.w	4*4
 
-plane_vectors
+mirror_vectors
 	dc.w	4		; line count
 	dc.w	0,1,%100,0	; p1,p2,color
 	dc.w	1,2,%100,0
 	dc.w	2,3,%100,0
 	dc.w	3,0,%100,0
 
-plane_params
-	ds.w	3		; A,B,C
-	ds.l	1		; d
+mirror_params
+	ds.w	3
+	ds.l	1
+	ds.w	1
 
 	;---- maths tables
 		
