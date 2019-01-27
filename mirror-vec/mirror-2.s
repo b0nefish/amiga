@@ -933,9 +933,8 @@ mirror_vectors
 	dc.w	3,0,%100,0
 
 mirror_params
-	ds.w	3
+	ds.w	4
 	ds.l	1
-	ds.w	1
 
 	;---- maths tables
 		
