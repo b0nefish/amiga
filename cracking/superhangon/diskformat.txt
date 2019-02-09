@@ -1,0 +1,27 @@
+Super Hang-On disk layout
+
+track0:
+
+	track 0 is standard amiga dos format
+
+track1:
+
+	has 1 single block of 8216 bytes
+
+	dc.w	$4489	; sync
+	dc.w	$2aaa	; sync
+	ds.b	8*513	; 64 bits wide even data
+	ds.b	8*513	; 64 bits wide odd data
+
+track2-79:
+
+	has 1 tiny block + 1 large block of 11308 bytes
+
+	dc.w	$4489	; sync
+	dc.w	$2aaa	; sync
+	ds.b	14		; ??
+	dc.w	$4489	; sync
+	dc.w	$4489	; sync
+	dc.w	$2aaa	; sync
+	ds.b	8*705	; 64 bits wide even data
+	ds.b	8*705	; 64 bits wide odd data
