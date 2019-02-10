@@ -2,10 +2,6 @@
 	SECTION	code,CODE_C
 	
 	include	startup.s
-
-; soh track raw length = 11308 bytes
-
-length	EQU	11308
 	
 trackloader
 	lea	$dff000,a6	;
@@ -20,15 +16,15 @@ trackloader
 	beq.b	.quit		;
 .wait	btst.b	#5,(a4)		; wait disk ready
 	bne.b	.wait		;
+
+	;----
+
+	jsr	track0(pc)	; go track 0
+
+	moveq	#2-1,d7		; start track
+	jsr	track(pc)	;
 	
 	;----
-		
-	jsr	track0(pc)	; go track 0
-	
-	moveq	#2-1,d7		; first track
-	jsr	track(pc)	;
-
-	;---- read loop
 	
 .next	jsr	load(pc)	; load both side
 	bchg.b	#2,$100(a5)	;
@@ -36,9 +32,20 @@ trackloader
 	bchg.b	#2,$100(a5)	;
 	lea	count(pc),a0	;
 	addq.w	#1,(a0)		; 
-	cmpi.w	#20,(a0)	; number of track to be read
+	cmpi.w	#20-1,(a0)	; number of track to be read
 	beq.b	.stop		;
 	jsr	step(pc)	; next track 
+
+	;---- copy
+	
+	lea	buffer+4(pc),a0	;
+	move.l	ptr(pc),a1	;
+	move.l	(a1),a2		;
+	move.w	#((512*11)/4)-1,d7
+.copy	move.l	(a0)+,(a2)+	;
+	dbf	d7,.copy	;
+	move.l	a2,(a1)		;
+
 	bra.b	.next		;
 	
 	;----
@@ -95,8 +102,8 @@ step	bclr.b	#0,$100(a5)	; step pulse
 
 delay	move.b	#%10000001,$d00(a4)
 	move.b	#%00001000,$e00(a4)
-	move.b	#$ff,$400(a4)
-	move.b	#$ff,$500(a4)	; start timer (oneshoot)
+	move.b	#$cc,$400(a4)
+	move.b	#$02,$500(a4)	; start timer (oneshoot)
 .wait	btst.b	#0,$d00(a4)
 	beq.b	.wait
 	rts
@@ -104,6 +111,7 @@ delay	move.b	#%10000001,$d00(a4)
 	;---- load track
 
 wordsync	EQU	$4489
+dmalen		EQU	5656
 decode		EQU	1
 decrypt		EQU	1
 checksum	EQU	1
@@ -111,13 +119,13 @@ checksum	EQU	1
 load	move.w	#%1000001001010000,$96(a6)
 	move.w 	#%0000000000000010,$9c(a6)
 	move.w	#$4000,$24(a6)	
-	lea	rawdata(pc),a0
+	lea	diskdata(pc),a0
 	move.l	a0,$20(a6)
 	move.w	#wordsync,$7e(a6)
 	move.w	#%0111111100000000,$9e(a6)
 	move.w	#%1001010100000000,$9e(a6)
 
-	move.w	#$8000!(length/2),d0
+	move.w	#$8000!dmalen,d0
 	move.w	d0,$24(a6)
 	move.w	d0,$24(a6)
 
@@ -143,8 +151,8 @@ mask	EQU	$5555
 	cmpi.w	#$2aaa,(a0)+	;
 	bne.b	load		;
 
-	lea	(length-24)/2(a0),a1
-	lea	buffer,a2
+	lea	5640+2(a0),a1
+	lea	buffer(pc),a2
 	moveq	#0,d0
 	moveq	#-1,d1
 
@@ -159,7 +167,7 @@ mask	EQU	$5555
 	move.l	d0,$60(a6)
 	move.l	d0,$64(a6)
 	move.w	#mask,$70(a6)
-	move.w	#(((length-24)/16)<<6)+4,$58(a6)	
+	move.w	#(705<<6)+4,$58(a6)	; 1 block has 5640 bytes	
 
 .wblt2	btst.b	#6,2(a6)
 	bne.b	.wblt2
@@ -172,66 +180,52 @@ mask	EQU	$5555
 	
 	;---- decrypt
 	
-	lea	buffer,a0	;
-	tst.w	(a0)+		;
+	lea	buffer(pc),a0	;
+	tst.w	(a0)		;
 	bne.w	load		;
 	
 	btst.b	#2,$100(a5)	; 
 	beq.b	.chksum		; decrypt only side 0
 
-	lea	2(a0),a1
+	lea	4(a0),a0
 	move.l	#$12345678,d0
-	move.w	#((((length-24)/2)-4)/4)-1,d7
-.loop1	eor.l	d0,(a1)
-	move.l	(a1)+,d0
+	move.w	#(5640/4)-1-1,d7
+.loop1	eor.l	d0,(a0)
+	move.l	(a0)+,d0
 	dbf	d7,.loop1
 
+	;---- checksum
+	
+.chksum	
 	IFEQ	checksum
 
 	rts
 
 	ENDC
 
-	;---- checksum
-	
-.chksum	moveq	#0,d0		;
+	lea	buffer+2(pc),a0	;
+	moveq	#0,d0		;
 	move.w	(a0)+,d0	; get track number 
-	move.w	#((((length-24)/2)-8)/4)-1,d7
+	move.w	#(5640/4)-2-1,d7
 .loop2	add.l	(a0)+,d0	; sum
 	dbf	d7,.loop2	;
-	
+
 	cmp.l	(a0),d0		; compare checksum
 	bne.w	load		; retry if different
-
-	;---- copy
-	
-	lea	buffer+4(pc),a0	;
-	lea	ptr(pc),a1	;
-	move.l	(a1),a2		;
-	move.w	#(512*11)-1,d7	;
-.loop3	move.b	(a0)+,(a2)+	;
-	dbf	d7,.loop3	;
-	move.l	a2,(a1)		;
-	
-	;----
 		
-	rts
+	rts			; done
 	
 	;----
 
 count	ds.w	1
-ptr	dc.l	shodata
+ptr	dc.l	target
 	
-rawdata	ds.b	length	
+diskdata
+	ds.w	dmalen	
 	dc.b	'tail'
 
-buffer	ds.b	(length-24)/2
+buffer	ds.w	705*4
 	dc.b	'tail'
 
-	;----
-
-	SECTION	data,DATA_F
-
-shodata	ds.b	(512*11*2)*20
-end	dc.b	'tail'
-
+target	ds.b	512*11*20
+end	dc.b	'tail'	
