@@ -77,8 +77,8 @@ step	bclr.b	#0,$100(a5)	; step pulse
 
 delay	move.b	#%10000001,$d00(a4)
 	move.b	#%00001000,$e00(a4)
-	move.b	#$ff,$400(a4)
-	move.b	#$ff,$500(a4)	; start timer (oneshoot)
+	move.b	#$cc,$400(a4)
+	move.b	#$02,$500(a4)	; start timer (oneshoot)
 .wait	btst.b	#0,$d00(a4)
 	beq.b	.wait
 	rts
@@ -87,14 +87,13 @@ delay	move.b	#%10000001,$d00(a4)
 
 wordsync	EQU	$4489
 dmalen		EQU	4115
-decode		EQU	0
-decrypt		EQU	0
-checksum	EQU	0
+decode		EQU	1
+checksum	EQU	1
 
 load	move.w	#%1000001001010000,$96(a6)
 	move.w 	#%0000000000000010,$9c(a6)
 	move.w	#$4000,$24(a6)	
-	lea	rawdata(pc),a0
+	lea	diskdata(pc),a0
 	move.l	a0,$20(a6)
 	move.w	#wordsync,$7e(a6)
 	move.w	#%0111111100000000,$9e(a6)
@@ -124,8 +123,8 @@ mask	EQU	$5555
 	cmpi.w	#$2aaa,(a0)+	;
 	bne.b	load		;
 
-	;lea	(length-24)/2(a0),a1
-	lea	buffer,a2
+	lea	4104+2(a0),a1
+	lea	buffer(pc),a2
 	moveq	#0,d0
 	moveq	#-1,d1
 
@@ -153,42 +152,26 @@ mask	EQU	$5555
 
 	;---- checksum
 	
-.chksum	moveq	#0,d0		;
-	move.w	(a0)+,d0	; get track number 
-	;move.w	#((((length-24)/2)-8)/4)-1,d7
-.loop2	add.l	(a0)+,d0	; sum
+.chksum	tst.w	(a2)+		;
+	bne.w	load		;
+	moveq	#0,d0		;
+	move.w	(a2)+,d0	;  
+	move.w	#(4104/4)-2-1,d7;
+.loop2	add.l	(a2)+,d0	; sum
 	dbf	d7,.loop2	;
-	
-	cmp.l	(a0),d0		; compare checksum
-	bne.w	load		; retry if different
 
-	;---- copy
-	
-;	lea	buffer+4(pc),a0	;
-;	lea	ptr(pc),a1	;
-;	move.l	(a1),a2		;
-;	move.w	#(512*11)-1,d7	;
-;.loop3	move.b	(a0)+,(a2)+	;
-;	dbf	d7,.loop3	;
-;	move.l	a2,(a1)		;
+	cmp.l	(a2),d0		; compare checksum
+	bne.w	load		; retry if different
 	
 	;----
 		
 	rts
 	
 	;----
-
-count	ds.w	1
-;ptr	dc.l	shodata
 	
-rawdata	ds.w	dmalen	
+diskdata
+	ds.w	dmalen	
 	dc.b	'tail'
 
 buffer	ds.w	513*4
-	dc.b	'tail'
-
-	;----
-
-;shodata	ds.b	(512*11*2)*20
-;end	dc.b	'tail'
-
+r	dc.b	'tail'
