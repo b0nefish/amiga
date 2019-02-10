@@ -56,9 +56,11 @@ boot	dc.b	'DOS',0
 
 	;----
 	 
-.stack	lea	$300,a0		;
+.stack	move.w	#$6800,d1	;
+	lea	$300,a0		;
 	lea	$180,sp		;
 	move.l	d0,(sp)		; push ram address
+	move.w	d1,4(sp)	;
 	move.l	a0,usp		;
 	
 	;----
@@ -66,9 +68,6 @@ boot	dc.b	'DOS',0
 	jmp	$72000		; run program
 	
 	;----
-	
-	dc.b	'Super Hang-On AmigaDOS 1MEG version. Deprotected from '
-	dc.b	'original disk in 2017.',0
 
 padding	ds.b	(512*2)-(padding-boot)
 end
