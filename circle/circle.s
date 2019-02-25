@@ -1,5 +1,5 @@
 
-	SECTION	filledcircle,CODE_C
+	SECTION	circle,CODE_C
 
 	include	/circle/startup.s
 
@@ -102,6 +102,8 @@ copperlist
 	dc.w	$100,$1200
 	dc.w	$102,0
 	dc.w	$104,0
+	dc.w	$108,0
+	dc.w	$10a,0
 	dc.w	$180,0
 	dc.w	$182,$fff
 
