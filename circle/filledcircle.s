@@ -30,7 +30,7 @@ mainloop
 	sub.l	d1,d2		; x² = r² - y²
 	ble.b	.next
 
-	;----
+	;---- sqrt
 
 	moveq	#0,d4		;
 	moveq	#0,d5		;
@@ -49,7 +49,7 @@ mainloop
 	addx.w	d4,d5		; xi+1 = 1/2(xi + a/xi)	
 	ENDR			;
 
-	;----
+	;---- plotter
 	
 	move.w	d7,d3		;
 	lsl.w	#2,d3		;
@@ -111,7 +111,7 @@ bitplaneptr
 
 	dc.l	-2
 	
-	; table
+	; ---- plot tables
 
 x	SET 	-320/2
 y	SET	-256/2
