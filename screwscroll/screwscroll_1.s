@@ -1,9 +1,14 @@
+
+	SECTION	screwscroll,CODE_C
+
+	include	screwscroll/startup.s
+
 	;---- precalc rotation
 		
 prerotate
 	lea	sincos(pc),a0	
 	lea	90*2(a0),a1
-	lea	bitmap(pc),a2
+	lea	scrollbpl(pc),a2
 	lea	(16+8)*42(a2),a2
 	lea	rotate(pc),a3
 	
@@ -40,7 +45,7 @@ prerotate
 
 
 
-
+main
 
 
 
@@ -67,8 +72,8 @@ scroll	lea		text(pc),a0
 
 		lea     charset(pc),a0
 		lea     (a0,d0.w),a0
-        lea     bitmap(pc),a1
-		lea		40(a1),a1
+        lea     scrollbpl(pc),a1
+		lea		((16+8)*42)+40(a1),a1
         move.l	#(%0000100100000000!$f0)<<16,d0
 		moveq   #-1,d1
 		move.l	#((60-2)<<16)!(42-2),d2
@@ -83,10 +88,10 @@ scroll	lea		text(pc),a0
 
 		;---- scroll bitmap
 
-.shift	lea     bitmap(pc),a0
-        lea     (42*16)-2(a0),a0
+.shift	lea     scrollbpl(pc),a0
+        lea     ((16+16)*42)-2(a0),a0
 		move.l	a0,a1
-		move.l  #((%0010100100000000!a)<<16)!%10,d0
+		move.l  #((%0010100100000000!$f0)<<16)!%10,d0
         moveq   #-1,d1
 		moveq	#0,d2
 
@@ -99,7 +104,40 @@ scroll	lea		text(pc),a0
 		move.w	#(16*64)+21,$58(a6)
 		
 		addq.b  #2,(a2)
-        rts
+		
+		
+		
+		
+		
+		
+	;---- screen swapping
+
+	lea	doublebuffer(pc),a0
+	movem.l	(a0),d0-d1
+	exg	d0,d1
+	movem.l	d0-d1,(a0)
+	
+	lea	copperlist(pc),a0
+	move.l #scrollbpl,d1
+	move.w	d1,bitplaneptr-copperlist+6(a0)
+	swap	d1
+	move.w	d1,bitplaneptr-copperlist+2(a0)
+	
+	;----
+
+
+sync	move.l	4(a6),d0
+		andi.l	#$1ff00,d0
+		cmp.l	#$13800,d0
+		bne.b	sync
+
+
+	btst.b	#6,$bfe001
+	bne.w	main
+	
+	rts		
+		
+
 
 
 
@@ -152,19 +190,62 @@ wblt	btst.b	#6,2(a6)
 
 
 
+		;----
+		
+doublebuffer
+	dc.l	bitplane1	; screen buffer
+	dc.l	bitplane2	; draw buffer
+	
+		;----
+	
+copperlist
+	dc.w	$8e,$2c81
+	dc.w	$90,$2cc1
+	dc.w	$92,$38
+	dc.w	$94,$d0
+	dc.w	$100,$1200
+	dc.w	$102,0
+	dc.w	$104,0
+	dc.w	$108,42-40
+	dc.w	$10a,42-40
 
-
-
-
-
+bitplaneptr
+	dc.w	$e0,0
+	dc.w	$e2,0
+	dc.w	$100,$1200
+	dc.w	$180,0
+	dc.w	$182,$fff
+	dc.l	-2			; copper end
 
 		;----
 
 chrcnt	ds.w	1
 scrlcnt	ds.b	1
-text	dc.b	'THIS IS IMPOSSIBLE ! ROMANTIC OF EXALTY BACK TO THE VILLAGE AFTER 25 YEARS OF ABSENCE. -- ',0
+text	dc.b	'THIS IS IMPOSSIBLE ! ROMANTIC OF EXALTY BACK IN TOWN AFTER 25 YEARS OF ABSENCE. -- ',0
         even
 		
 rotate
 	ds.l	180
-	ds.w	180		
+	ds.w	180
+	dc.b	'sebo'
+
+	;---- tables
+
+sincos
+	incbin	screwscroll/sincos16
+	
+	;---- datas
+	
+charset
+	incbin	screwscroll/fonts
+	
+	;---- bitmaps
+
+scrollbpl
+	ds.w	21*16*3
+	
+bitplane1
+	ds.w	20*256
+	
+bitplane2
+	ds.w	20*256
