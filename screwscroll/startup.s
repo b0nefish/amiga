@@ -19,12 +19,13 @@
 	move.w	#$7fff,$9a(a6)	
 
 	lea	copperlist(pc),a0
-	move.l	triplebuffer+8(pc),a1
-	move.l	a1,d0
-	move.w	d0,bitplaneptr-copperlist+6(a0)
-	swap	d0
-	move.w	d0,bitplaneptr-copperlist+2(a0)
+	;move.l	doublebuffer+4(pc),a1
+	;move.l	a1,d0
+	;move.w	d0,bitplaneptr-copperlist+6(a0)
+	;swap	d0
+	;move.w	d0,bitplaneptr-copperlist+2(a0)
 	
+	lea	$dff000,a6
 	move.l	a0,$80(a6)
 	clr.w	$88(a6)
 	move.w	#$83c0,$96(a6)	
