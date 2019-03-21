@@ -48,7 +48,7 @@ main	move.w	#$5,$180(a6)
 	move.l	a0,$54(a6)
 	move.l	#(%100000000)<<16,$40(a6)
 	move.w	#0,$66(a6)	
-	move.w	#(256<<6)+20,$58(a6)
+	move.w	#((256*2)<<6)+20,$58(a6)
 
 	;---- scrolltext
 
@@ -113,7 +113,6 @@ mirror	lea	scrollbpl(pc),a0
 	lea     ((16+8)*42)(a0),a0
 	lea	16*3*42(a0),a1
 	move.w	#16-1,d7
-	move.w	#$30,$180(a6)
 
 .wblt	btst.b	#6,2(a6)
 	bne.b	.wblt
@@ -125,15 +124,14 @@ mirror	lea	scrollbpl(pc),a0
 	lea	(-42*2)+2(a1),a1
 	dbf	d7,.loop	
 
-	move.w	#$3,$180(a6)
-
 	;----
 
 screw	move.l	doublebuffer(pc),a0
 	lea	40*(256/2)(a0),a0
-	lea	40*256(a0),a2
+	lea	40*256(a0),a1
+	lea	rotate(pc),a2
+	;lea	sincos(pc),a5
 
-	lea	rotate(pc),a3
 	move.w	#(320/16)-1,d7
         move.l  #$00010001,d0
         move.w	#(16*64)+1,d1
@@ -145,36 +143,42 @@ screw	move.l	doublebuffer(pc),a0
 	move.w	#40-2,$62(a6)
         move.w	#42-2,$64(a6)
         move.w	#40-2,$66(a6)
+
+.loop2	move.w	#15,d5
          
-.loop
+.loop1
 	
-	REPT	16
+	;REPT	16
 
-	move.l	(a3)+,a1
-	tst.w	(a3)+
+	move.l	(a2)+,a3
+	lea	(a3,d6.w),a3
+	lea	42*16*2(a3),a4
+	ror.l   #1,d0
 
-	lea	(a1,d6.w),a3
-        ror.l   #1,d0
+	move.w	(a2)+,d2
+	bpl.b	.k	
+	
+	bsr.w	wblt
         move.l	a0,$4c(a6)
         move.l	a3,$50(a6)
         move.l	a0,$54(a6)
         move.l	d0,$44(a6)
         move.w	d1,$58(a6)
+	bra.b	.ll
 
-	lea	42*16(a1),a3
-	lea	(a3,d6.w),a3
-        move.l	a2,$4c(a6)
-	move.l	a3,$50(a6)
-	move.l	a2,$54(a6)
+.k	move.l	a1,$4c(a6)
+	move.l	a4,$50(a6)
+	move.l	a1,$54(a6)
         move.l	d0,$44(a6)
         move.w	d1,$58(a6)
 
-	ENDR
+	;ENDR
+.ll	dbf	d5,.loop1
 
 .done	lea	2(a0),a0
-	lea	2(a2),a2
+	lea	2(a1),a1
 	addq.w	#2,d6
-        dbf     d7,.loop
+        dbf     d7,.loop2
 
 	;---- screen swapping
 
@@ -244,7 +248,56 @@ bitplaneptr
 	dc.w	$e6,0
 	;dc.w	$180,0
 	dc.w	$182,$fff
-	dc.w	$184,$999
+	dc.w	$184,$444
+
+	dc.w	$ac01,$fffe
+	dc.w	$182,$444
+
+	dc.w	$ad01,$fffe
+	dc.w	$182,$666
+
+	dc.w	$ae01,$fffe
+	dc.w	$182,$bbb
+
+	dc.w	$af01,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b001,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b101,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b201,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b301,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b401,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b501,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b601,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b701,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b801,$fffe
+	dc.w	$182,$fff
+
+	dc.w	$b901,$fffe
+	dc.w	$182,$bbb
+
+	dc.w	$ba01,$fffe
+	dc.w	$182,$666
+
+	dc.w	$bb01,$fffe
+	dc.w	$182,$444
+
 	dc.l	-2		; copper end
 
 	;----
