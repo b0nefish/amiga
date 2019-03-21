@@ -40,8 +40,8 @@ prerotate
 	bmi.b	.push		;
 	lea	42*16*2(a4),a4	;
 	move.l	#40*256,d4	;
-.push	move.l	a4,(a3)+	;
-	move.l	d4,(a3)+	;
+.push	move.l	d4,(a3)+	;
+	move.l	a4,(a3)+	;
 	addq.w	#2,d0		; next angle
 	dbf	d7,.loop	;
 
@@ -153,14 +153,14 @@ screw	move.l	doublebuffer(pc),a0
 	REPT	16
 
 	ror.l   #1,d0
-	movem.l	(a1)+,a3/d2
+	movem.l	(a1)+,d2/a3
 	lea	(a3,d6.w),a3
-	lea	(a3,d2.w),a3
+	lea	(a0,d2.w),a4
 
 	bsr.w	wblt
-        move.l	a0,$4c(a6)
+        move.l	a4,$4c(a6)
         move.l	a3,$50(a6)
-        move.l	a0,$54(a6)
+        move.l	a4,$54(a6)
         move.l	d0,$44(a6)
         move.w	d1,$58(a6)
 
@@ -184,7 +184,7 @@ screw	move.l	doublebuffer(pc),a0
 	move.w	d1,bitplaneptr-copperlist+2(a0)
 	
 	swap	d1
-	addi.l	#40*256,d1
+	addi.l	#(40*256),d1
 
 	move.w	d1,bitplaneptr-copperlist+6+8(a0)
 	swap	d1
@@ -238,55 +238,7 @@ bitplaneptr
 	dc.w	$e6,0
 	;dc.w	$180,0
 	dc.w	$182,$fff
-	dc.w	$184,$444
-
-	dc.w	$ac01,$fffe
-	dc.w	$182,$444
-
-	dc.w	$ad01,$fffe
-	dc.w	$182,$666
-
-	dc.w	$ae01,$fffe
-	dc.w	$182,$bbb
-
-	dc.w	$af01,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b001,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b101,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b201,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b301,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b401,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b501,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b601,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b701,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b801,$fffe
-	dc.w	$182,$fff
-
-	dc.w	$b901,$fffe
-	dc.w	$182,$bbb
-
-	dc.w	$ba01,$fffe
-	dc.w	$182,$666
-
-	dc.w	$bb01,$fffe
-	dc.w	$182,$444
+	dc.w	$184,$333
 
 	dc.l	-2		; copper end
 
