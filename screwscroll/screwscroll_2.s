@@ -13,7 +13,6 @@ prerotate
 	lea	rotate(pc),a3
 	
 	move.w	#0,d0		; angle
-	add.w	d0,d0		;
 	move.w	#0,d1		; y
 	move.w	#16,d2		; z
 	move.w	#320-1,d7	;
@@ -33,6 +32,7 @@ prerotate
 	add.l	d6,d6		;
 	swap	d4		; d4 = y'
 	swap	d6		; d6 = z'
+
 	muls.w	#42,d4		;
 	lea	(a2,d4.l),a4	;
 	moveq	#0,d4		;
@@ -42,8 +42,13 @@ prerotate
 	move.l	#40*256,d4	;
 .push	move.l	d4,(a3)+	;
 	move.l	a4,(a3)+	;
-	addq.w	#2,d0		; next angle
-	dbf	d7,.loop	;
+	
+	addq.w	#4,d0		; next angle
+	cmpi.w	#360*2,d0	;
+	blt.b	.next		;
+	subi.w	#360*2,d0	;
+
+.next	dbf	d7,.loop	;
 
 main	move.w	#$5,$180(a6)
 
