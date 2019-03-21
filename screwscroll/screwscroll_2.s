@@ -10,18 +10,18 @@ prerotate
 	lea	90*2(a0),a1
 	lea	scrollbpl(pc),a2
 	lea	(16+8)*42(a2),a2
-	lea	rotate(pc),a3
+	lea	rotate1(pc),a3
+	lea	rotate2(pc),a4
 	
 	move.w	#0,d0		; angle
 	move.w	#0,d1		; y
-	move.w	#16,d2		; z
-	move.w	#320-1,d7	;
+	move.w	#16,d2		; z (radius)
+	move.w	#678-1,d7	;
 
 .loop	move.w	(a0,d0.w),d3	; d3 = sin(beta)
 	move.w	(a1,d0.w),d4	; d4 = cos(beta)
 	move.w	d3,d5		;
 	move.w	d4,d6		;
-
 	muls.w	d1,d4		; d4 = y * cos(beta) * k
 	muls.w	d2,d3		; d3 = z * sin(beta) * k
 	muls.w	d2,d6		; d6 = z * cos(beta) * k
@@ -34,16 +34,16 @@ prerotate
 	swap	d6		; d6 = z'
 
 	muls.w	#42,d4		;
-	lea	(a2,d4.l),a4	;
-	moveq	#0,d4		;
+	lea	(a2,d4.l),a5	;
+
 	tst.w	d6		;
-	bmi.b	.push		;
-	lea	42*16*2(a4),a4	;
-	move.l	#40*256,d4	;
-.push	move.l	d4,(a3)+	;
-	move.l	a4,(a3)+	;
+	bmi.b	.mi		;
+	move.l	a5,(a3)+	;
+	bra.b	.ok		;
+.mi	lea	16*2*42(a5),a5	;
+	move.l	a5,(a4)+	;
 	
-	addq.w	#4,d0		; next angle
+.ok	addq.w	#2,d0		; next angle
 	cmpi.w	#360*2,d0	;
 	blt.b	.next		;
 	subi.w	#360*2,d0	;
@@ -58,7 +58,7 @@ main	move.w	#$5,$180(a6)
 	move.l	a0,$54(a6)
 	move.l	#(%100000000)<<16,$40(a6)
 	move.w	#0,$66(a6)	
-	move.w	#((256*2)<<6)+20,$58(a6)
+	move.w	#((150*2)<<6)+20,$58(a6)
 
 	;---- scrolltext
 
@@ -137,9 +137,12 @@ mirror	lea	scrollbpl(pc),a0
 	;----
 
 screw	move.l	doublebuffer(pc),a0
-	lea	40*(256/2)(a0),a0
-	lea	rotate(pc),a1
-	;lea	sincos(pc),a5
+
+	lea	40*(150/2)(a0),a0
+	lea	rotate1(pc),a1
+
+	lea	40*150(a0),a2
+	lea	rotate2(pc),a3
 
 	move.w	#(320/16)-1,d7
         move.l  #$00010001,d0
@@ -158,20 +161,29 @@ screw	move.l	doublebuffer(pc),a0
 	REPT	16
 
 	ror.l   #1,d0
-	movem.l	(a1)+,d2/a3
-	lea	(a3,d6.w),a3
-	lea	(a0,d2.w),a4
 
-	bsr.w	wblt
-        move.l	a4,$4c(a6)
-        move.l	a3,$50(a6)
-        move.l	a4,$54(a6)
+	move.l	(a1)+,a4
+	lea	(a4,d6.w),a4
+	;bsr.w	wblt
+        move.l	a0,$4c(a6)
+        move.l	a4,$50(a6)
+        move.l	a0,$54(a6)
+        move.l	d0,$44(a6)
+        move.w	d1,$58(a6)
+
+	move.l	(a3)+,a4
+	lea	(a4,d6.w),a4
+	;bsr.w	wblt
+        move.l	a2,$4c(a6)
+        move.l	a4,$50(a6)
+        move.l	a2,$54(a6)
         move.l	d0,$44(a6)
         move.w	d1,$58(a6)
 
 	ENDR
 
 .done	lea	2(a0),a0
+	lea	2(a2),a2
 	addq.w	#2,d6
         dbf     d7,.loop
 
@@ -189,7 +201,7 @@ screw	move.l	doublebuffer(pc),a0
 	move.w	d1,bitplaneptr-copperlist+2(a0)
 	
 	swap	d1
-	addi.l	#(40*256),d1
+	addi.l	#(40*150),d1
 
 	move.w	d1,bitplaneptr-copperlist+6+8(a0)
 	swap	d1
@@ -243,7 +255,11 @@ bitplaneptr
 	dc.w	$e6,0
 	;dc.w	$180,0
 	dc.w	$182,$fff
-	dc.w	$184,$333
+	dc.w	$184,$666
+	dc.w	$186,$fff
+
+	dc.w	$a001,$fffe
+	dc.w	$100,$0200
 
 	dc.l	-2		; copper end
 
@@ -254,8 +270,9 @@ scrlcnt	ds.b	1
 text	dc.b	'THIS IS IMPOSSIBLE ! ROMANTIC OF EXALTY BACK IN TOWN AFTER 25 YEARS OF ABSENCE. -- ',0
         even
 		
-rotate
-	ds.l	320*2
+rotate1	ds.l	320
+	dc.b	'sebo'
+rotate2	ds.l	358
 	dc.b	'sebo'
 
 	;---- tables
@@ -278,4 +295,5 @@ bitplane1
 
 bitplane2
 	ds.w	20*256*2
+
 
