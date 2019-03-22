@@ -71,7 +71,7 @@ wave	lea	sincos(pc),a0	;
 
 	;---- main
 
-main	;move.w	#$5,$180(a6)
+main	move.w	#$5,$180(a6)
 
 	;---- clear bitmap
 
@@ -167,38 +167,35 @@ screw	move.l	doublebuffer(pc),a0
 	moveq	#0,d6
 	move.w	#(320/16)-1,d7
 		
-	bsr.w	wblt
+.wblt	btst.b	#6,2(a6)
+	bne.b	.wblt
 
 	move.l  #(%0000110100000000!($f0!$cc))<<16,$40(a6)
 	move.w	#40-2,$62(a6)
         move.w	#42-2,$64(a6)
         move.w	#40-2,$66(a6)
+        move.w	#%1000010000000000,$96(a6)
 
 .loop         
 	
 	REPT	16
 
-	ror.l   #1,d0
+	ror.w   #1,d0
 	move.l	(a1)+,a4
 	move.l	(a3)+,d2
 	lea	(a4,d6.w),a4
 	lea	(a0,d2.l),a5
-	bsr.w	wblt
 	move.l	a5,$4c(a6)
-	move.l	a4,$50(a6)
-	move.l	a5,$54(a6)
-        move.l	d0,$44(a6)
+	movem.l	a4/a5,$50(a6)
+        move.w	d0,$44(a6)
         move.w	d1,$58(a6)
 
 	move.l	(a2)+,a4
 	move.l	(a3)+,d2
 	lea	(a4,d6.w),a4
 	lea	(a0,d2.l),a5	
-        bsr.w	wblt
 	move.l	a5,$4c(a6)
-	move.l	a4,$50(a6)
-	move.l	a5,$54(a6)
-        move.l	d0,$44(a6)
+	movem.l	a4/a5,$50(a6)
         move.w	d1,$58(a6)
 
 	ENDR
@@ -206,6 +203,8 @@ screw	move.l	doublebuffer(pc),a0
 	lea	2(a0),a0
 	addq.w	#2,d6
         dbf     d7,.loop
+
+	move.w	#%10000000000,$96(a6)
 
 	;---- screen swapping
 
@@ -229,7 +228,7 @@ screw	move.l	doublebuffer(pc),a0
 	
 	;----
 
-	;clr.w	$180(a6)
+	clr.w	$180(a6)
 
 sync	move.l	4(a6),d0
 	andi.l	#$1ff00,d0
@@ -242,12 +241,6 @@ sync	move.l	4(a6),d0
 	bne.w	main
 	
 	rts	
-
-	;----
-
-wblt	btst.b	#6,2(a6)
-	bne.b	wblt
-	rts
 
 	;----
 
@@ -273,7 +266,7 @@ bitplaneptr
 	dc.w	$e2,0
 	dc.w	$e4,0
 	dc.w	$e6,0
-	dc.w	$180,0
+	;dc.w	$180,0
 	dc.w	$184,$555
 
 y	SET	$42
@@ -335,3 +328,4 @@ bitplane1
 
 bitplane2
 	ds.w	20*256*2
+
