@@ -50,6 +50,27 @@ prerotate
 
 .next	dbf	d7,.loop	;
 
+	;---- precalc sin wave
+	
+wave	lea	sincos(pc),a0	;
+	lea	sinwave(pc),a1	;
+	moveq	#0,d0		;
+	move.w	#320-1,d7	;
+.loop	move.w	(a0,d0.w),d1	;
+	muls.w	#50,d1		;
+	add.l	d1,d1		;
+	swap	d1		;
+	addi.w	#150/2,d1	;
+	mulu.w	#40,d1		;
+	move.l	d1,d2		;
+	addi.l	#40*150,d2	;
+	movem.l	d1/d2,(a1)	;
+	lea	8(a1),a1	;
+	addq.w	#2,d0		;
+	dbf	d7,.loop	;
+
+	;---- main
+
 main	move.w	#$5,$180(a6)
 
 	;---- clear bitmap
@@ -137,17 +158,14 @@ mirror	lea	scrollbpl(pc),a0
 	;----
 
 screw	move.l	doublebuffer(pc),a0
-
-	lea	40*(150/2)(a0),a0
 	lea	rotate1(pc),a1
+	lea	rotate2(pc),a2
+	lea	sinwave(pc),a3
 
-	lea	40*150(a0),a2
-	lea	rotate2(pc),a3
-
-	move.w	#(320/16)-1,d7
         move.l  #$00010001,d0
         move.w	#(16*64)+1,d1
 	moveq	#0,d6
+	move.w	#(320/16)-1,d7
 		
 	bsr.w	wblt
 
@@ -161,29 +179,29 @@ screw	move.l	doublebuffer(pc),a0
 	REPT	16
 
 	ror.l   #1,d0
-
 	move.l	(a1)+,a4
+	move.l	(a3)+,d2
 	lea	(a4,d6.w),a4
-	;bsr.w	wblt
-        move.l	a0,$4c(a6)
-        move.l	a4,$50(a6)
-        move.l	a0,$54(a6)
+	lea	(a0,d2.l),a5
+	move.l	a5,$4c(a6)
+	move.l	a4,$50(a6)
+	move.l	a5,$54(a6)
         move.l	d0,$44(a6)
         move.w	d1,$58(a6)
 
-	move.l	(a3)+,a4
+	move.l	(a2)+,a4
+	move.l	(a3)+,d2
 	lea	(a4,d6.w),a4
-	;bsr.w	wblt
-        move.l	a2,$4c(a6)
-        move.l	a4,$50(a6)
-        move.l	a2,$54(a6)
+	lea	(a0,d2.l),a5	
+        move.l	a5,$4c(a6)
+	move.l	a4,$50(a6)
+	move.l	a5,$54(a6)
         move.l	d0,$44(a6)
         move.w	d1,$58(a6)
 
 	ENDR
 
-.done	lea	2(a0),a0
-	lea	2(a2),a2
+	lea	2(a0),a0
 	addq.w	#2,d6
         dbf     d7,.loop
 
@@ -201,7 +219,7 @@ screw	move.l	doublebuffer(pc),a0
 	move.w	d1,bitplaneptr-copperlist+2(a0)
 	
 	swap	d1
-	addi.l	#(40*150),d1
+	addi.l	#40*150,d1
 
 	move.w	d1,bitplaneptr-copperlist+6+8(a0)
 	swap	d1
@@ -255,10 +273,10 @@ bitplaneptr
 	dc.w	$e6,0
 	;dc.w	$180,0
 	dc.w	$182,$fff
-	dc.w	$184,$666
+	dc.w	$184,$445
 	dc.w	$186,$fff
 
-	dc.w	$a001,$fffe
+	dc.w	$d001,$fffe
 	dc.w	$100,$0200
 
 	dc.l	-2		; copper end
@@ -272,7 +290,11 @@ text	dc.b	'THIS IS IMPOSSIBLE ! ROMANTIC OF EXALTY BACK IN TOWN AFTER 25 YEARS O
 		
 rotate1	ds.l	320
 	dc.b	'sebo'
+
 rotate2	ds.l	358
+	dc.b	'sebo'
+
+sinwave	ds.l	320*2
 	dc.b	'sebo'
 
 	;---- tables
@@ -295,5 +317,3 @@ bitplane1
 
 bitplane2
 	ds.w	20*256*2
-
-
