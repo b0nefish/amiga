@@ -182,7 +182,7 @@ screw	move.l	doublebuffer(pc),a0
 
 	ror.w   #1,d0
 	move.l	(a1)+,a4
-	move.l	(a3)+,d2
+	move.l	(a3),d2
 	lea	(a4,d6.w),a4
 	lea	(a0,d2.l),a5
 	move.l	a5,$4c(a6)
@@ -191,7 +191,7 @@ screw	move.l	doublebuffer(pc),a0
         move.w	d1,$58(a6)
 
 	move.l	(a2)+,a4
-	move.l	(a3)+,d2
+	move.l	4(a3),d2
 	lea	(a4,d6.w),a4
 	lea	(a0,d2.l),a5	
 	move.l	a5,$4c(a6)

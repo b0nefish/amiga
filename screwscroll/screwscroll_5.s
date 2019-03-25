@@ -8,7 +8,7 @@
 prerotate
 	lea	sincos(pc),a0	
 	lea	90*2(a0),a1
-	lea	scrollbpl(pc),a2
+	lea	workbuffer(pc),a2
 	lea	(16+8)*42(a2),a2
 	lea	rotate1(pc),a3
 	lea	rotate2(pc),a4
@@ -87,8 +87,8 @@ scroll	lea	text(pc),a0
 	lea	chrcnt(pc),a1
 	lea	scrlcnt(pc),a2
 	move.b  (a2),d0
-	andi.b   #15,d0
-	bne.b   .shift
+	andi.b   #7,d0
+	bne.w   .shift
 	
 	;---- copy new char
 
@@ -103,12 +103,14 @@ scroll	lea	text(pc),a0
 	ext.w	d0
 	add.w	d0,d0
 
+	;---- copy font
+
 	lea     charset(pc),a0
 	lea     (a0,d0.w),a0
-        lea     scrollbpl(pc),a1
-	lea	((16+8)*42)+40(a1),a1
-        move.l	#(%0000100100000000!$f0)<<16,d0
-	moveq   #-1,d1
+        lea     workbuffer(pc),a1
+	lea	(42*16)+40(a1),a1
+	move.l	#(%0000100100000000!$f0)<<16,d0
+	moveq	#-1,d1
 	move.l	#((120-2)<<16)!(42-2),d2
 
 .wblt1	btst.b	#6,2(a6)
@@ -119,13 +121,27 @@ scroll	lea	text(pc),a0
         move.l	d2,$64(a6)
         move.w	#(16*64)+1,$58(a6)
 
-	;---- scroll bitmap
+	;----
 
-.shift	lea     scrollbpl(pc),a0
-        lea     ((16+8+16)*42)-2(a0),a0
+        lea     workbuffer(pc),a0
+	lea	42*32(a0),a1
+	moveq	#0,d0
+offset	SET	0
+	REPT	16
+	move.w	d0,offset(a0)
+	move.w	d0,offset(a1)
+offset	SET	offset+42
+	ENDR
+
+	;----- scroll 4px horizontally
+
+k	EQU	(3*16)
+
+.shift	lea     workbuffer(pc),a0
+        lea     (k*40)-2(a0),a0
 	move.l	a0,a1
-	move.l  #((%0010100100000000!$f0)<<16)!%10,d0
-        moveq   #-1,d1
+	move.l  #((%0100100100000000!$f0)<<16)!%10,d0
+	moveq	#-1,d1
 	moveq	#0,d2
 
 .wblt2	btst.b	#6,2(a6)
@@ -134,77 +150,61 @@ scroll	lea	text(pc),a0
 	movem.l	d0/d1,$40(a6)
 	movem.l	a0/a1,$50(a6)
 	move.l	d2,$64(a6)
-	move.w	#(16*64)+21,$58(a6)
-	
+	move.w	#(k*64)+21,$58(a6)
+
+	;---- scroll 1px vertically
+
+	lea     workbuffer(pc),a0
+        lea     (k*42)-4(a0),a0		
+	lea	42(a0),a1
+	move.l  #((%0000100100000000!$f0)<<16)!%10,d0
+	move.l	#-1,d1
+	move.l	#((42-40)<<16)!(42-40),d2
+
+.wblt3	btst.b	#6,2(a6)
+	bne.b	.wblt3
+
+	movem.l	d0/d1,$40(a6)
+	movem.l	a0/a1,$50(a6)
+	move.l	d2,$64(a6)
+	move.w	#(k*64)+20,$58(a6)
+
+	;---- roll
+
+	lea     workbuffer(pc),a0
+	move.l	a0,a1
+        lea     (k*42)(a0),a0		
+
+.wblt4	btst.b	#6,2(a6)
+	bne.b	.wblt4
+
+	;move.l	20(a0),42+20(a1)
+	;move.l	20+4(a0),42+20+4(a1)
+	;move.l	20+8(a0),42+20+8(a1)
+
+	;move.l	0(a0),42+2(a1)
+	;move.l	0+4(a0),42+2+4(a1)
+	;move.l	0+8(a0),42+2+8(a1)
+
+	;----
+
 	addq.b  #2,(a2)
 
 	;----
 
-mirror	lea	scrollbpl(pc),a0
-	lea     ((16+8)*42)(a0),a0
-	lea	16*3*42(a0),a1
-	move.w	#16-1,d7
+mirror	lea	workbuffer(pc),a0
+	lea	(100*42)(a0),a1
+	move.w	#30-1,d7
 
 .wblt	btst.b	#6,2(a6)
 	bne.b	.wblt
 
 .loop	REPT	40/4
-	move.l	(a0)+,(a1)+
+	;move.l	(a0)+,(a1)+
 	ENDR
 	lea	2(a0),a0
 	lea	(-42*2)+2(a1),a1
 	dbf	d7,.loop	
-
-	;----
-
-screw	move.l	doublebuffer(pc),a0
-	lea	rotate1(pc),a1
-	lea	rotate2(pc),a2
-	lea	sinwave(pc),a3
-
-        move.l  #$00010001,d0
-        move.w	#(16*64)+1,d1
-	moveq	#0,d6
-	move.w	#(320/16)-1,d7
-		
-.wblt	btst.b	#6,2(a6)
-	bne.b	.wblt
-
-	move.l  #(%0000110100000000!($f0!$cc))<<16,$40(a6)
-	move.w	#40-2,$62(a6)
-        move.w	#42-2,$64(a6)
-        move.w	#40-2,$66(a6)
-        move.w	#%1000010000000000,$96(a6)
-
-.loop         
-	
-	REPT	16
-
-	ror.w   #1,d0
-	move.l	(a1)+,a4
-	move.l	(a3)+,d2
-	lea	(a4,d6.w),a4
-	lea	(a0,d2.l),a5
-	move.l	a5,$4c(a6)
-	movem.l	a4/a5,$50(a6)
-        move.w	d0,$44(a6)
-        move.w	d1,$58(a6)
-
-	move.l	(a2)+,a4
-	move.l	(a3)+,d2
-	lea	(a4,d6.w),a4
-	lea	(a0,d2.l),a5	
-	move.l	a5,$4c(a6)
-	movem.l	a4/a5,$50(a6)
-        move.w	d1,$58(a6)
-
-	ENDR
-
-	lea	2(a0),a0
-	addq.w	#2,d6
-        dbf     d7,.loop
-
-	move.w	#%10000000000,$96(a6)
 
 	;---- screen swapping
 
@@ -214,13 +214,13 @@ screw	move.l	doublebuffer(pc),a0
 	movem.l	d0-d1,(a0)
 	
 	lea	copperlist(pc),a0
-	;move.l	#scrollbpl,d1
+	move.l	#workbuffer,d1
 	move.w	d1,bitplaneptr-copperlist+6(a0)
 	swap	d1
 	move.w	d1,bitplaneptr-copperlist+2(a0)
 	
 	swap	d1
-	addi.l	#40*150,d1
+	addi.l	#42*(100-30)+6,d1
 
 	move.w	d1,bitplaneptr-copperlist+6+8(a0)
 	swap	d1
@@ -255,40 +255,31 @@ copperlist
 	dc.w	$90,$2cc1
 	dc.w	$92,$38
 	dc.w	$94,$d0
-	dc.w	$100,$2200
+	dc.w	$100,$1200
 	dc.w	$102,0
 	dc.w	$104,0
-	dc.w	$108,0
-	dc.w	$10a,0
+	dc.w	$108,42-40
+	dc.w	$10a,42-40
 
 bitplaneptr
 	dc.w	$e0,0
 	dc.w	$e2,0
 	dc.w	$e4,0
 	dc.w	$e6,0
-	;dc.w	$180,0
-	dc.w	$184,$555
-
-y	SET	$42
-rgb	SET	$f00
-	REPT	15
-	dc.w	(y<<8)!1,$fffe
-	dc.w	$182,rgb
-	dc.w	$186,rgb
-y	SET	y+4
-rgb	SET	rgb+$10
-	ENDR
+	dc.w	$180,0
+	dc.w	$182,$fff
+	dc.w	$184,$f00
 	
-	REPT	15
-	dc.w	(y<<8)!1,$fffe
-	dc.w	$182,rgb
-	dc.w	$186,rgb
-y	SET	y+4
-rgb	SET	rgb-$10
-	ENDR
+	;dc.w	$5001,$fffe
+	;dc.w	$100,$1200
+	;dc.w	$182,$fff	
+	;dc.w	$184,$555
+	;dc.w	$186,$fff
 
-	dc.w	(y<<8)!1,$fffe
-	dc.w	$100,$0200
+	;dc.w	$6001,$fffe
+	;dc.w	$182,$0
+	;dc.w	$184,$0
+	;dc.w	$186,$0
 
 	dc.l	-2		; copper end
 
@@ -316,11 +307,12 @@ sincos
 	;---- datas
 	
 charset
+	ds.b	120
 	incbin	/screwscroll/charset
 	
 	;---- bitmaps
 
-scrollbpl
+workbuffer
 	ds.w	21*256
 	
 bitplane1
