@@ -226,6 +226,7 @@ sin	move.l	oho(pc),a0
 	bne.b	.wblt
 
 	move.w	#0,$42(a6)
+	move.w	#-1,$46(a6)
 	move.w	#40-2,$62(a6)
         move.w	#42-2,$64(a6)
         move.w	#40-2,$66(a6)
