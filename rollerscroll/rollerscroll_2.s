@@ -1,13 +1,17 @@
 
 	SECTION	rollerscroll,CODE_C
 
-	include	/screwscroll/startup.s
+	include	/rollerscroll/startup.s
 
 	;---- precalc sin wave
 	
 wave	lea	sincos(pc),a0	;
-	lea	sinwave(pc),a1	;
+	lea	sinwave1(pc),a1	;
+	lea	sinwave2(pc),a2	;
+	lea	bitplane1,a3	;
+	lea	bitplane2,a4	;
 	moveq	#0,d0		;
+	moveq	#0,d6		;
 	move.w	#320-1,d7	;
 .loop	move.w	(a0,d0.w),d1	;
 	muls.w	#50,d1		;
@@ -15,9 +19,18 @@ wave	lea	sincos(pc),a0	;
 	swap	d1		;
 	addi.w	#150/2,d1	;
 	mulu.w	#80,d1		;
-	move.w	d1,(a1)		;
-	lea	2(a1),a1	;
+	move.w	d6,d2		;
+	lsr.w	#4,d2		;
+	add.w	d2,d2		;
+	add.w	d2,d1		;
+	lea	(a3,d1.w),a5	;
+	move.l	a5,(a1)		;
+	lea	(a4,d1.w),a5	;
+	move.l	a5,(a2)		;
+	lea	4(a1),a1	;
+	lea	4(a2),a2	;
 	addq.w	#2,d0		;
+	addq.w	#1,d6		;
 	dbf	d7,.loop	;
 
 	;---- main
@@ -27,10 +40,11 @@ main	move.w	#$5,$180(a6)
 	;---- clear bitmap
 
 	move.l	doublebuffer(pc),a0
+	lea	40*50(a0),a0
 	move.l	a0,$54(a6)
 	move.l	#(%100000000)<<16,$40(a6)
 	move.w	#0,$66(a6)	
-	move.w	#((150*2)<<6)+20,$58(a6)
+	move.w	#((130*2)<<6)+20,$58(a6)
 
 	;---- scrolltext
 
@@ -170,7 +184,7 @@ k	EQU	3*16
 	move.l	a0,a1
 	lea	(k*42)-42-42(a0),a0
 	lea	(60*42)+4(a1),a1
-	move.l  #(%0001100100000000!$f0)<<16,d0
+	move.l  #(%0000100100000000!$f0)<<16,d0
 	move.l	#-1,d1
 	move.l	#((-80-(42-40))<<16)!(42-40)+42,d2
 
@@ -197,38 +211,141 @@ k	EQU	3*16
 
 	;---- sinwave
 
-sin	lea	sinwave(pc),a0
-	move.l	doublebuffer(pc),a1
-	lea	workbuffer+(59*42),a4
+sin	move.l	oho(pc),a0
+	lea	workbuffer+(59*42),a2
+	lea	$4c(a6),a4
+	lea	$44(a6),a5
 
         move.w  #1,d0
-        move.w	#(32*64)+1,d1
+        move.w	#(30*64)+1,d1
+	move.w  #%0000100100000000!$f0,d2
+	move.w  #%0000110100000000!($f0!$cc),d3
 	move.w	#(320/16)-1,d7
 		
 .wblt	btst.b	#6,2(a6)
 	bne.b	.wblt
 
-	move.l  #(%0000110100000000!($f0!$cc))<<16,$40(a6)
+	move.w	#0,$42(a6)
 	move.w	#40-2,$62(a6)
         move.w	#42-2,$64(a6)
         move.w	#40-2,$66(a6)
         move.w	#%1000010000000000,$96(a6)
 
-.loop         
+.loop	ror.w   #1,d0
+	move.l	(a0)+,a3
+	movem.l	a2/a3,$50(a6)
+	move.w	d0,(a5)
+	move.w	d2,$40(a6)
+	move.w	d1,$58(a6)
 	
-	REPT	16
 	ror.w   #1,d0
-	move.w	(a0)+,d2
-	lea	(a1,d2.w),a3
-	move.l	a3,a5
-	movem.l	a3-a5,$4c(a6)
-        move.w	d0,$44(a6)
-        move.w	d1,$58(a6)
-	ENDR
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d3,$40(a6)
+	move.w	d1,$58(a6)
+	
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+	
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
 
-	lea	2(a1),a1
-	lea	2(a4),a4
-        dbf     d7,.loop
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	ror.w   #1,d0
+	move.l	(a0)+,a1
+	move.l	a1,a3
+	movem.l	a1-a3,(a4)
+	move.w	d0,(a5)
+	move.w	d1,$58(a6)
+
+	lea	2(a2),a2
+	dbf     d7,.loop
 
 	move.w	#%10000000000,$96(a6)
 
@@ -251,6 +368,13 @@ sin	lea	sinwave(pc),a0
 	move.w	d1,bitplaneptr-copperlist+6+8(a0)
 	swap	d1
 	move.w	d1,bitplaneptr-copperlist+2+8(a0)
+
+	;----
+
+	lea	oho(pc),a0
+	movem.l	(a0),d0-d1
+	exg	d0,d1
+	movem.l	d0-d1,(a0)
 	
 	;----
 
@@ -271,8 +395,12 @@ sync	move.l	4(a6),d0
 	;----
 
 doublebuffer
-	dc.l	bitplane1	; screen buffer
-	dc.l	bitplane2	; draw buffer
+	dc.l	bitplane1
+	dc.l	bitplane2
+
+oho
+	dc.l	sinwave1
+	dc.l	sinwave2
 	
 	;----
 
@@ -297,16 +425,6 @@ bitplaneptr
 	dc.w	$184,$666
 	dc.w	$186,$fff
 
-	;dc.w	$8001,$fffe
-	;dc.w	$100,$2200
-	;dc.w	$182,$fff	
-	;dc.w	$184,$555
-	
-	;dc.w	$6001,$fffe
-	;dc.w	$182,$0
-	;dc.w	$184,$0
-	;dc.w	$186,$0
-
 	dc.l	-2		; copper end
 
 	;----
@@ -316,19 +434,22 @@ scrlcnt	ds.b	1
 text	dc.b	'THIS IS IMPOSSIBLE ! ROMANTIC OF EXALTY BACK IN TOWN AFTER 25 YEARS OF ABSENCE. -- ',0
         even
 		
-sinwave	ds.l	320*2
+sinwave1
+	ds.l	320
 	dc.b	'sebo'
 
+sinwave2
+	ds.l	320
+	dc.b	'sebo'
+	
 	;---- tables
 
-sincos
-	incbin	/screwscroll/sincos16
+sincos	incbin	/rollerscroll/sincos16
 	
 	;---- datas
 	
-charset
-	ds.b	120
-	incbin	/screwscroll/charset
+charset	ds.b	120
+	incbin	/rollerscroll/charset
 	
 	;---- bitmaps
 
@@ -340,5 +461,3 @@ bitplane1
 
 bitplane2
 	ds.w	20*256*2
-
-
