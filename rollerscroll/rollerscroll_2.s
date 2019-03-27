@@ -6,32 +6,21 @@
 	;---- precalc sin wave
 	
 wave	lea	sincos(pc),a0	;
-	lea	sinwave1(pc),a1	;
-	lea	sinwave2(pc),a2	;
-	lea	bitplane1,a3	;
-	lea	bitplane2,a4	;
+	lea	sinwave(pc),a1	;
 	moveq	#0,d0		;
-	moveq	#0,d6		;
-	move.w	#320-1,d7	;
+	move.w	#(320*3)-1,d7	;
 .loop	move.w	(a0,d0.w),d1	;
 	muls.w	#50,d1		;
 	add.l	d1,d1		;
 	swap	d1		;
 	addi.w	#150/2,d1	;
 	mulu.w	#80,d1		;
-	move.w	d6,d2		;
-	lsr.w	#4,d2		;
-	add.w	d2,d2		;
-	add.w	d2,d1		;
-	lea	(a3,d1.w),a5	;
-	move.l	a5,(a1)		;
-	lea	(a4,d1.w),a5	;
-	move.l	a5,(a2)		;
-	lea	4(a1),a1	;
-	lea	4(a2),a2	;
+	move.w	d1,(a1)+	;
 	addq.w	#2,d0		;
-	addq.w	#1,d6		;
-	dbf	d7,.loop	;
+	cmpi.w	#360*2,d0	;
+	ble.b	.next		;
+	subi.w	#360*2,d0	;		
+.next	dbf	d7,.loop	;
 
 	;---- main
 
@@ -211,15 +200,17 @@ k	EQU	3*16
 
 	;---- sinwave
 
-sin	move.l	oho(pc),a0
-	lea	workbuffer+(59*42),a2
-	lea	$4c(a6),a4
-	lea	$44(a6),a5
+sin	lea	sinwave(pc),a0
+	move.l	doublebuffer(pc),a1
+	lea	workbuffer+(59*42),a3
+	lea	$4c(a6),a5
 
-        move.w  #1,d0
-        move.w	#(30*64)+1,d1
-	move.w  #%0000100100000000!$f0,d2
-	move.w  #%0000110100000000!($f0!$cc),d3
+	move.w	wavepos(pc),d0
+	lea	(a0,d0.w),a0
+
+	move.w	#(30*64)+1,d0
+	move.w  #%0000100100000000!$f0,d1
+	move.w  #%0000110100000000!($f0!$cc),d2
 	move.w	#(320/16)-1,d7
 		
 .wblt	btst.b	#6,2(a6)
@@ -232,123 +223,131 @@ sin	move.l	oho(pc),a0
         move.w	#40-2,$66(a6)
         move.w	#%1000010000000000,$96(a6)
 
-.loop	ror.w   #1,d0
-	move.l	(a0)+,a3
-	movem.l	a2/a3,$50(a6)
-	move.w	d0,(a5)
+.loop	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	movem.l	a3/a4,$50(a6)
+	move.w	#1<<15,$44(a6)
+	move.w	d1,$40(a6)
+	move.w	d0,$58(a6)
+	
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<14,$44(a6)
 	move.w	d2,$40(a6)
-	move.w	d1,$58(a6)
+	move.w	d0,$58(a6)
 	
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d3,$40(a6)
-	move.w	d1,$58(a6)
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<13,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<12,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<11,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<10,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<9,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<8,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<7,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<6,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<5,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<4,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<3,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<2,$44(a6)
+	move.w	d0,$58(a6)
+
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<1,$44(a6)
+	move.w	d0,$58(a6)
 	
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-	
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
+	move.w	(a0)+,d3
+	lea	(a1,d3.w),a4
+	move.l	a4,a2
+	movem.l	a2-a4,(a5)
+	move.w	#1<<0,$44(a6)
+	move.w	d0,$58(a6)
 
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	ror.w   #1,d0
-	move.l	(a0)+,a1
-	move.l	a1,a3
-	movem.l	a1-a3,(a4)
-	move.w	d0,(a5)
-	move.w	d1,$58(a6)
-
-	lea	2(a2),a2
+	lea	2(a1),a1
+	lea	2(a3),a3
 	dbf     d7,.loop
 
 	move.w	#%10000000000,$96(a6)
+
+	lea	wavepos(pc),a0
+	addq.w	#2,(a0)
+	cmpi.w	#360*2,(a0)
+	ble.b	.done
+	subi.w	#360*2,(a0)
+.done
 
 	;---- screen swapping
 
@@ -369,13 +368,6 @@ sin	move.l	oho(pc),a0
 	move.w	d1,bitplaneptr-copperlist+6+8(a0)
 	swap	d1
 	move.w	d1,bitplaneptr-copperlist+2+8(a0)
-
-	;----
-
-	lea	oho(pc),a0
-	movem.l	(a0),d0-d1
-	exg	d0,d1
-	movem.l	d0-d1,(a0)
 	
 	;----
 
@@ -398,10 +390,6 @@ sync	move.l	4(a6),d0
 doublebuffer
 	dc.l	bitplane1
 	dc.l	bitplane2
-
-oho
-	dc.l	sinwave1
-	dc.l	sinwave2
 	
 	;----
 
@@ -432,15 +420,14 @@ bitplaneptr
 
 chrcnt	ds.w	1
 scrlcnt	ds.b	1
-text	dc.b	'THIS IS IMPOSSIBLE ! ROMANTIC OF EXALTY BACK IN TOWN AFTER 25 YEARS OF ABSENCE. -- ',0
+text	dc.b	'NOTE THAT THIS IS SCROLLER IS A 1 PIXEL SINE SCROLLER '
+	dc.b	'WITH KORK EFFECT.....    '
+	dc.b	'TRY TO BEAT THIS SUCKER !!!     '
+	dc.b	0
         even
-		
-sinwave1
-	ds.l	320
-	dc.b	'sebo'
 
-sinwave2
-	ds.l	320
+wavepos	ds.w	1		
+sinwave	ds.w	320*3
 	dc.b	'sebo'
 	
 	;---- tables
