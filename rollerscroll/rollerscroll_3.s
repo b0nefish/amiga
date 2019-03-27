@@ -10,7 +10,7 @@ wave	lea	sincos(pc),a0	;
 	moveq	#0,d0		;
 	move.w	#(320*3)-1,d7	;
 .loop	move.w	(a0,d0.w),d1	;
-	muls.w	#40,d1	;
+	muls.w	#40,d1		;
 	add.l	d1,d1		;
 	swap	d1		;
 	addi.w	#150/2,d1	;
