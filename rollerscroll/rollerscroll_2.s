@@ -1,3 +1,6 @@
+; 1 pixel sin scroller with kork effect
+; original code idea by slayer/scoopex
+; compile with devpac 2.15
 
 	SECTION	rollerscroll,CODE_C
 
@@ -10,10 +13,10 @@ wave	lea	sincos(pc),a0	;
 	moveq	#0,d0		;
 	move.w	#(320*3)-1,d7	;
 .loop	move.w	(a0,d0.w),d1	;
-	muls.w	#50,d1		;
+	muls.w	#40,d1		;
 	add.l	d1,d1		;
 	swap	d1		;
-	addi.w	#150/2,d1	;
+	addi.w	#40,d1		;
 	mulu.w	#80,d1		;
 	move.w	d1,(a1)+	;
 	addq.w	#2,d0		;
@@ -24,16 +27,15 @@ wave	lea	sincos(pc),a0	;
 
 	;---- main
 
-main	move.w	#$5,$180(a6)
+main	;move.w	#$5,$180(a6)
 
 	;---- clear bitmap
 
 	move.l	doublebuffer(pc),a0
-	lea	40*50(a0),a0
 	move.l	a0,$54(a6)
 	move.l	#(%100000000)<<16,$40(a6)
 	move.w	#0,$66(a6)	
-	move.w	#((130*2)<<6)+20,$58(a6)
+	move.w	#((96*2)<<6)+20,$58(a6)
 
 	;---- scrolltext
 
@@ -62,7 +64,7 @@ scroll	lea	text(pc),a0
 	lea     charset(pc),a0
 	lea     (a0,d0.w),a0
         lea     workbuffer(pc),a1
-	lea	(42*4)+40(a1),a1
+	lea	40(a1),a1
 	move.l	#(%0000100100000000!$f0)<<16,d0
 	moveq	#-1,d1
 	move.l	#((120-2)<<16)!(42-2),d2
@@ -78,10 +80,10 @@ scroll	lea	text(pc),a0
 	;----
 
         lea     workbuffer+40(pc),a0
-	move.w	d0,42*00(a0)
-	move.w	d0,42*01(a0)
-	move.w	d0,42*02(a0)
-	move.w	d0,42*04(a0)
+	move.w	d0,42*16(a0)
+	move.w	d0,42*17(a0)
+	move.w	d0,42*18(a0)
+	move.w	d0,42*19(a0)
 	move.w	d0,42*20(a0)
 	move.w	d0,42*21(a0)
 	move.w	d0,42*22(a0)
@@ -94,29 +96,13 @@ scroll	lea	text(pc),a0
 	move.w	d0,42*29(a0)
 	move.w	d0,42*30(a0)
 	move.w	d0,42*31(a0)
-	move.w	d0,42*32(a0)
-	move.w	d0,42*33(a0)
-	move.w	d0,42*34(a0)
-	move.w	d0,42*35(a0)
-	move.w	d0,42*36(a0)
-	move.w	d0,42*37(a0)
-	move.w	d0,42*38(a0)
-	move.w	d0,42*39(a0)
-	move.w	d0,42*40(a0)
-	move.w	d0,42*41(a0)
-	move.w	d0,42*42(a0)
-	move.w	d0,42*43(a0)
-	move.w	d0,42*44(a0)
-	move.w	d0,42*45(a0)
-	move.w	d0,42*46(a0)
-	move.w	d0,42*47(a0)
 
 	;----- scroll 4px horizontally
 
-k	EQU	3*16
+.shift	addq.b  #2,(a2)
 
-.shift	lea     workbuffer(pc),a0
-        lea     (k*40)-2(a0),a0
+	lea     workbuffer(pc),a0
+        lea     (32*42)-2(a0),a0
 	move.l	a0,a1
 	move.l  #((%0100100100000000!$f0)<<16)!%10,d0
 	moveq	#-1,d1
@@ -128,12 +114,12 @@ k	EQU	3*16
 	movem.l	d0/d1,$40(a6)
 	movem.l	a0/a1,$50(a6)
 	move.l	d2,$64(a6)
-	move.w	#(k*64)+21,$58(a6)
+	move.w	#(32*64)+21,$58(a6)
 
 	;---- scroll 1px vertically
 
 	lea     workbuffer(pc),a0
-        lea     (k*42)-4(a0),a0		
+        lea     (32*42)-2-2(a0),a0		
 	lea	42(a0),a1
 	move.l  #((%0000100100000000!$f0)<<16)!%10,d0
 	move.l	#-1,d1
@@ -145,34 +131,30 @@ k	EQU	3*16
 	movem.l	d0/d1,$40(a6)
 	movem.l	a0/a1,$50(a6)
 	move.l	d2,$64(a6)
-	move.w	#(k*64)+20,$58(a6)
+	move.w	#(32*64)+20,$58(a6)
 
 	;---- roll
 
 	lea     workbuffer(pc),a0
 	move.l	a0,a1
-        lea     (k*42)(a0),a0		
+        lea     (32*42)(a0),a0		
 
 .wblt4	btst.b	#6,2(a6)
 	bne.b	.wblt4
 
-	move.l	20(a0),42+24(a1)
-	move.l	20+4(a0),42+24+4(a1)
-	move.l	20+8(a0),42+24+8(a1)
-	move.l	0(a0),42+4(a1)
-	move.l	0+4(a0),42+4+4(a1)
-	move.l	0+8(a0),42+4+8(a1)
+	move.l	24(a0),42+24(a1)
+	move.l	24+4(a0),42+24+4(a1)
+	move.l	24+8(a0),42+24+8(a1)
+	move.l	8(a0),42+8(a1)
+	move.l	8+4(a0),42+8+4(a1)
+	move.l	8+8(a0),42+8+8(a1)
 
-	;----
-
-	addq.b  #2,(a2)
-
-	;---- mirror
+	;---- mirror and interleave
 
 	lea	workbuffer(pc),a0
 	move.l	a0,a1
-	lea	(k*42)-42-42(a0),a0
-	lea	(60*42)+4(a1),a1
+	lea	(32*42)(a0),a0
+	lea	(61*42)(a1),a1
 	move.l  #(%0000100100000000!$f0)<<16,d0
 	move.l	#-1,d1
 	move.l	#((-80-(42-40))<<16)!(42-40)+42,d2
@@ -188,12 +170,19 @@ k	EQU	3*16
 	;----
 	
 	lea	workbuffer(pc),a0
-	lea	59*42(a0),a1
+	lea	60*42(a0),a1
 	move.w	#16-1,d7
-.loop
-	REPT	40/4	
+
+.loop	move.l	(a0)+,(a1)+
 	move.l	(a0)+,(a1)+
-	ENDR
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
 	lea	2(a0),a0
 	lea	42+2(a1),a1	
 	dbf	d7,.loop
@@ -202,7 +191,7 @@ k	EQU	3*16
 
 sin	lea	sinwave(pc),a0
 	move.l	doublebuffer(pc),a1
-	lea	workbuffer+(59*42),a3
+	lea	workbuffer+(60*42),a3
 	lea	$4c(a6),a5
 
 	move.w	wavepos(pc),d0
@@ -371,7 +360,7 @@ sin	lea	sinwave(pc),a0
 	
 	;----
 
-	clr.w	$180(a6)
+	;clr.w	$180(a6)
 
 sync	move.l	4(a6),d0
 	andi.l	#$1ff00,d0
@@ -398,7 +387,7 @@ copperlist
 	dc.w	$90,$2cc1
 	dc.w	$92,$38
 	dc.w	$94,$d0
-	dc.w	$100,$2200
+	dc.w	$100,$0200
 	dc.w	$102,0
 	dc.w	$104,0
 	dc.w	$108,40
@@ -409,10 +398,32 @@ bitplaneptr
 	dc.w	$e2,0
 	dc.w	$e4,0
 	dc.w	$e6,0
-	;dc.w	$180,0
-	dc.w	$182,$fff
-	dc.w	$184,$666
-	dc.w	$186,$fff
+	dc.w	$180,0
+	dc.w	$184,$208
+
+	dc.w	($4b<<8)!1,$fffe
+	dc.w	$100,$2200
+
+y	SET	$4c
+col1	SET	$f00
+	REPT	15
+	dc.w	(y<<8)!1,$fffe
+	dc.w	$182,col1
+	dc.w	$186,col1
+y	SET	y+3
+col1	SET	col1+$10
+	ENDR
+	
+	REPT	15
+	dc.w	(y<<8)!1,$fffe
+	dc.w	$182,col1
+	dc.w	$186,col1
+y	SET	y+3
+col1	SET	col1-$10
+	ENDR
+
+	dc.w	((y-2)<<8)!1,$fffe
+	dc.w	$100,$0200
 
 	dc.l	-2		; copper end
 
@@ -422,7 +433,7 @@ chrcnt	ds.w	1
 scrlcnt	ds.b	1
 text	dc.b	'NOTE THAT THIS IS SCROLLER IS A 1 PIXEL SINE SCROLLER '
 	dc.b	'WITH KORK EFFECT.....    '
-	dc.b	'TRY TO BEAT THIS SUCKER !!!     '
+	dc.b	'TRY TO BEAT THIS SUCKER !!!                    '
 	dc.b	0
         even
 
@@ -449,3 +460,4 @@ bitplane1
 
 bitplane2
 	ds.w	20*256*2
+

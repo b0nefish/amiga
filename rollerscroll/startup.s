@@ -1,5 +1,5 @@
 
-	move.l	4.w,a6
+start	move.l	4.w,a6
 	lea	gfxname(pc),a1
 	moveq	#0,d0
 	jsr	-408(a6)
@@ -18,14 +18,7 @@
 	move.w	#$7fff,$96(a6)
 	move.w	#$7fff,$9a(a6)	
 
-	lea	copperlist(pc),a0
-	;move.l	doublebuffer+4(pc),a1
-	;move.l	a1,d0
-	;move.w	d0,bitplaneptr-copperlist+6(a0)
-	;swap	d0
-	;move.w	d0,bitplaneptr-copperlist+2(a0)
-	
-	lea	$dff000,a6
+	lea	copperlist(pc),a0	
 	move.l	a0,$80(a6)
 	clr.w	$88(a6)
 	move.w	#$83c0,$96(a6)	
@@ -33,10 +26,6 @@
 	lea	call(pc),a0
 	jsr	(a0)
 	
-waitlmb
-	btst	#6,$bfe001
-	bne	waitlmb
-
 	move.w	#$7fff,$96(a6)
 	move.w	#$7fff,$9a(a6)
 	move.l	oldcopper(pc),$80(a6)
@@ -53,11 +42,10 @@ gfxname
 	
 	EVEN
 	
-dma
-	ds.w	1
-intena
-	ds.w	1
+dma	ds.w	1
+intena	ds.w	1
+
 oldcopper
 	ds.l	1
-call
 
+call
