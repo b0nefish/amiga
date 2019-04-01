@@ -65,37 +65,40 @@ scroll	lea	text(pc),a0
 	lea     (a0,d0.w),a0
         lea     workbuffer(pc),a1
 	lea	40(a1),a1
-	move.l	#(%0000100100000000!$f0)<<16,d0
-	moveq	#-1,d1
-	move.l	#((120-2)<<16)!(42-2),d2
+	moveq	#0,d0
 
-.wblt1	btst.b	#6,2(a6)
-	bne.b	.wblt1
-
-	movem.l	d0/d1,$40(a6)
-        movem.l	a0/a1,$50(a6)
-        move.l	d2,$64(a6)
-        move.w	#(16*64)+1,$58(a6)
-
-	;----
-
-        lea     workbuffer+40(pc),a0
-	move.w	d0,42*16(a0)
-	move.w	d0,42*17(a0)
-	move.w	d0,42*18(a0)
-	move.w	d0,42*19(a0)
-	move.w	d0,42*20(a0)
-	move.w	d0,42*21(a0)
-	move.w	d0,42*22(a0)
-	move.w	d0,42*23(a0)
-	move.w	d0,42*24(a0)
-	move.w	d0,42*25(a0)
-	move.w	d0,42*26(a0)
-	move.w	d0,42*27(a0)
-	move.w	d0,42*28(a0)
-	move.w	d0,42*29(a0)
-	move.w	d0,42*30(a0)
-	move.w	d0,42*31(a0)
+	move.w	120*0(a0),42*0(a1)
+	move.w	120*1(a0),42*1(a1)
+	move.w	120*2(a0),42*2(a1)
+	move.w	120*3(a0),42*3(a1)
+	move.w	120*4(a0),42*4(a1)
+	move.w	120*5(a0),42*5(a1)
+	move.w	120*6(a0),42*6(a1)
+	move.w	120*7(a0),42*7(a1)
+	move.w	120*8(a0),42*8(a1)
+	move.w	120*9(a0),42*9(a1)
+	move.w	120*10(a0),42*10(a1)
+	move.w	120*11(a0),42*11(a1)
+	move.w	120*12(a0),42*12(a1)
+	move.w	120*13(a0),42*13(a1)
+	move.w	120*14(a0),42*14(a1)
+	move.w	120*15(a0),42*15(a1)
+	move.w	d0,42*16(a1)
+	move.w	d0,42*17(a1)
+	move.w	d0,42*18(a1)
+	move.w	d0,42*19(a1)
+	move.w	d0,42*20(a1)
+	move.w	d0,42*21(a1)
+	move.w	d0,42*22(a1)
+	move.w	d0,42*23(a1)
+	move.w	d0,42*24(a1)
+	move.w	d0,42*25(a1)
+	move.w	d0,42*26(a1)
+	move.w	d0,42*27(a1)
+	move.w	d0,42*28(a1)
+	move.w	d0,42*29(a1)
+	move.w	d0,42*30(a1)
+	move.w	d0,42*31(a1)
 
 	;----- scroll 4px horizontally
 
@@ -197,7 +200,7 @@ sin	lea	sinwave(pc),a0
 	move.w	wavepos(pc),d0
 	lea	(a0,d0.w),a0
 
-	move.w	#(30*64)+1,d0
+	move.w	#(32*64)+1,d0
 	move.w  #%0000100100000000!$f0,d1
 	move.w  #%0000110100000000!($f0!$cc),d2
 	move.w	#(320/16)-1,d7
@@ -401,17 +404,24 @@ bitplaneptr
 	dc.w	$180,0
 	dc.w	$184,$208
 
-	dc.w	($4b<<8)!1,$fffe
-	dc.w	$100,$2200
-
 y	SET	$4c
-col1	SET	$f00
+col1	SET	$f07
 	REPT	15
 	dc.w	(y<<8)!1,$fffe
+	IFEQ	y-$4c
+	dc.w	$100,$2200
+	ENDC
 	dc.w	$182,col1
 	dc.w	$186,col1
 y	SET	y+3
 col1	SET	col1+$10
+	ENDR
+
+	REPT	2
+	dc.w	(y<<8)!1,$fffe
+	dc.w	$182,col1
+	dc.w	$186,col1
+y	SET	y+3
 	ENDR
 	
 	REPT	15
