@@ -3,7 +3,7 @@
 	
 	include	/src/startup.s
 	
-trackloader
+loadfile
 	lea	$dff000,a6	;
 	lea	$bfd000,a5	; ciab
 	lea	$bfe001,a4	; ciaa
@@ -11,6 +11,8 @@ trackloader
 	move.b	#%11111111,$100(a5)
 	bclr.b	#7,$100(a5)	; motor on
 	bclr.b	#3,$100(a5)	; df0
+	bclr.b	#2,$100(a5)	; set side
+
 	
 	btst.b	#2,(a4)		; check disk inserted
 	beq.b	.quit		;
@@ -19,35 +21,57 @@ trackloader
 
 	;----
 
-	jsr	track0(pc)	; go track 0
+	lea	target(pc),a0	
+	lea	filetable+48(pc),a1
+	moveq	#0,d0		;
+	moveq	#0,d1		;
+	move.b	4(a1),d0	; start track
+	move.b	5(a1),d1	; block
+	move.w	6(a1),d2	; file size
 
-	moveq	#1-1,d7		; start track
-	jsr	track(pc)	;
+	;----
+
+	jsr	track0(pc)	; go track 0
+	move.w	d0,d7		;
+	jsr	move(pc)	;
+
+	;----
+
+	lea	buffer(pc),a1	;
+	mulu.w	#512,d1		;
+	lea	4(a1),a2	;
+	lea	4(a1,d1.l),a1	;
+
+	move.w	#11*512,d7	;
+	sub.w	d1,d7		;
+	subq.w	#1,d7		;
+
+	;----
+
+.load	jsr	load(pc)	; load track
+
+.loop	move.b	(a1)+,(a0)+	;
+	subq.w	#1,d2		;
+	dble	d7,.loop	;	
 	
+	tst.w	d2		; enought data ?
+	beq.b	.done		; yes => leave
+	jsr	next(pc)	; no  => next track
+
+	move.l	a2,a1		;	
+	move.w	#(11*512)-1,d7	;
+	bra.b	.load		;
+
 	;----
 	
-.next	bchg.b	#2,$100(a5)	;
-	jsr	load(pc)	; load both side
-	;bchg.b	#2,$100(a5)	;
-	;jsr	load(pc)	;
-	;bchg.b	#2,$100(a5)	;
-	;lea	count(pc),a0	;
-	;addq.w	#1,(a0)		; 
-	;cmpi.w	#20,(a0)	; number of track to be read
-	;beq.b	.stop		;
-	;jsr	step(pc)	; next track 
-	;bra.b	.next		;
-	
-	;----
-	
-.stop	bset.b	#3,$100(a5)	; stop df0
+.done	bset.b	#3,$100(a5)	; stop df0
 	bset.b	#7,$100(a5)	;
 	bclr.b	#3,$100(a5)	;
 	bset.b	#3,$100(a5)	;
 
 .quit	rts
 
-	;---- seek track 0
+	;---- track 0
 
 track0	btst.b	#4,(a4)		; seek track 0
 	beq.b	.done		;
@@ -65,27 +89,29 @@ track0	btst.b	#4,(a4)		; seek track 0
 	bsr.b	delay		;
 	rts			;
 
-	;---- set track
+	;---- move head
 
-track	bclr.b	#0,$100(a5)	; step pulse
+move	subq.w	#1,d7		;
+	bmi.b	.done		;
+.loop	bclr.b	#0,$100(a5)	; step pulse
 	nop			;
 	nop			;
 	nop			;
 	nop			;
 	bset.b	#0,$100(a5)	;
 	bsr.b	delay		;
-	dbf	d7,track	;
-	rts
+	dbf	d7,.loop	;
+.done	rts			;
 
-	;---- step
+	;---- next track
 
-step	bclr.b	#0,$100(a5)	; step pulse
+next	bclr.b	#0,$100(a5)	; step pulse
 	nop			;
 	nop			;
 	nop			;
 	nop			;
 	bset.b	#0,$100(a5)	;
-	bsr.b	delay		;
+	bsr.b	delay		; delay
 	rts
 	
 	;---- delay with ciaa timer a
@@ -106,7 +132,9 @@ decode		EQU	1
 decrypt		EQU	1
 checksum	EQU	1
 
-load	move.w	#%1000001001010000,$96(a6)
+load	movem.l	d0-a2,-(sp)
+
+.retry	move.w	#%1000001001010000,$96(a6)
 	move.w 	#%0000000000000010,$9c(a6)
 	move.w	#$4000,$24(a6)	
 	lea	diskdata(pc),a0
@@ -124,12 +152,6 @@ load	move.w	#%1000001001010000,$96(a6)
 
 	move.w	#$4000,$24(a6)
 
-	IFEQ	decode
-	
-	rts
-	
-	ENDC
-
 	;---- decode track
 	
 mask	EQU	$5555
@@ -137,9 +159,9 @@ mask	EQU	$5555
 	lea	20(a0),a0	; skip tiny sector
 
 .sync	cmpi.w	#wordsync,(a0)+	; sync
-	bne.b	load		;
+	bne.b	.retry		;
 	cmpi.w	#$2aaa,(a0)+	;
-	bne.b	load		;
+	bne.b	.retry		;
 
 	lea	5640+2(a0),a1
 	lea	buffer(pc),a2
@@ -161,18 +183,12 @@ mask	EQU	$5555
 
 .wblt2	btst.b	#6,2(a6)
 	bne.b	.wblt2
-
-	IFEQ	decrypt
-
-	rts
-
-	ENDC
 	
 	;---- decrypt
 	
 	lea	buffer(pc),a0	;
 	tst.w	(a0)		;
-	bne.w	load		;
+	bne.w	.retry		;
 	
 	btst.b	#2,$100(a5)	; 
 	beq.b	.chksum		; decrypt only side 0
@@ -186,14 +202,7 @@ mask	EQU	$5555
 
 	;---- checksum
 	
-.chksum	
-	IFEQ	checksum
-
-	rts
-
-	ENDC
-
-	lea	buffer+2(pc),a0	;
+.chksum	lea	buffer+2(pc),a0	;
 	moveq	#0,d0		;
 	move.w	(a0)+,d0	; get track number 
 	move.w	#(5640/4)-2-1,d7
@@ -201,28 +210,17 @@ mask	EQU	$5555
 	dbf	d7,.loop2	;
 
 	cmp.l	(a0),d0		; compare checksum
-	bne.w	load		; retry if different
+	bne.w	.retry		; retry if different
 
+	;----
+
+	movem.l	(sp)+,d0-a2
 	rts
-
-	;---- copy
-	
-;	lea	buffer+4(pc),a0	;
-;	move.l	ptr(pc),a1	;
-;	move.l	(a1),a2		;
-;	move.w	#((512*11)/4)-1,d7
-;.copy	move.l	(a0)+,(a2)+	;
-;	dbf	d7,.copy	;
-;	move.l	a2,(a1)		;
-		
-	;----
-
-	rts			; done
 	
 	;----
 
-;count	ds.w	1
-;ptr	dc.l	target
+filetable
+	incbin	/bin/filetable
 	
 diskdata
 	ds.w	dmalen	
@@ -231,5 +229,5 @@ diskdata
 buffer	ds.w	705*4
 	dc.b	'tail'
 
-;target	ds.b	512*11*2*20
-end	;dc.b	'tail'	
+target	ds.b	$1878
+end	dc.b	'tail'	
