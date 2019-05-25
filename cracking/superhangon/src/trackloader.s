@@ -1,7 +1,7 @@
 
-	SECTION	code,CODE_C
+	SECTION	trackloader,CODE_C
 	
-	include	startup.s
+	include	/src/startup.s
 	
 trackloader
 	lea	$dff000,a6	;
@@ -21,21 +21,22 @@ trackloader
 
 	jsr	track0(pc)	; go track 0
 
-	moveq	#2-1,d7		; start track
+	moveq	#1-1,d7		; start track
 	jsr	track(pc)	;
 	
 	;----
 	
-.next	jsr	load(pc)	; load both side
-	bchg.b	#2,$100(a5)	;
-	jsr	load(pc)	;
-	bchg.b	#2,$100(a5)	;
-	lea	count(pc),a0	;
-	addq.w	#1,(a0)		; 
-	cmpi.w	#20,(a0)	; number of track to be read
-	beq.b	.stop		;
-	jsr	step(pc)	; next track 
-	bra.b	.next		;
+.next	bchg.b	#2,$100(a5)	;
+	jsr	load(pc)	; load both side
+	;bchg.b	#2,$100(a5)	;
+	;jsr	load(pc)	;
+	;bchg.b	#2,$100(a5)	;
+	;lea	count(pc),a0	;
+	;addq.w	#1,(a0)		; 
+	;cmpi.w	#20,(a0)	; number of track to be read
+	;beq.b	.stop		;
+	;jsr	step(pc)	; next track 
+	;bra.b	.next		;
 	
 	;----
 	
@@ -202,15 +203,17 @@ mask	EQU	$5555
 	cmp.l	(a0),d0		; compare checksum
 	bne.w	load		; retry if different
 
+	rts
+
 	;---- copy
 	
-	lea	buffer+4(pc),a0	;
-	move.l	ptr(pc),a1	;
-	move.l	(a1),a2		;
-	move.w	#((512*11)/4)-1,d7
-.copy	move.l	(a0)+,(a2)+	;
-	dbf	d7,.copy	;
-	move.l	a2,(a1)		;
+;	lea	buffer+4(pc),a0	;
+;	move.l	ptr(pc),a1	;
+;	move.l	(a1),a2		;
+;	move.w	#((512*11)/4)-1,d7
+;.copy	move.l	(a0)+,(a2)+	;
+;	dbf	d7,.copy	;
+;	move.l	a2,(a1)		;
 		
 	;----
 
@@ -218,8 +221,8 @@ mask	EQU	$5555
 	
 	;----
 
-count	ds.w	1
-ptr	dc.l	target
+;count	ds.w	1
+;ptr	dc.l	target
 	
 diskdata
 	ds.w	dmalen	
@@ -228,5 +231,5 @@ diskdata
 buffer	ds.w	705*4
 	dc.b	'tail'
 
-target	ds.b	512*11*2*20
-end	dc.b	'tail'	
+;target	ds.b	512*11*2*20
+end	;dc.b	'tail'	
