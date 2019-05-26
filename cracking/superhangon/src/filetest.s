@@ -19,5 +19,5 @@ test	lea	shogfx1+8(pc),a0
 
 .quit	rts
 
-shogfx1	incbin	/bin/shografx
+shogfx1	incbin	/bin/shografx/table
 shogfx2	include	/src/shografx.s

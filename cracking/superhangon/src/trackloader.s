@@ -244,7 +244,7 @@ loadlen	ds.l	1
 	;---- table
 
 filetable
-	incbin	/bin/shografx
+	incbin	/bin/shografx/table
 
 	;---- buffers
 	
