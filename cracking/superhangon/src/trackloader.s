@@ -2,8 +2,39 @@
 	SECTION	trackloader,CODE_C
 	
 	include	/src/startup.s
+
+	;----
+
+ripper	lea	target(pc),a0	
+	lea	filetable+8+(0*8)(pc),a1
+	moveq	#0,d2
+	move.w	#20-1,d7
+
+.loop	jsr	loadfile(pc)
+	lea	(a0,d1.w),a0
+	lea	8(a1),a1
+	andi.l	#$ffff,d1
+	add.l	d1,d2
+	move.l	d0,fname
+	move.w	d1,fsize
+	dbf	d7,.loop
+
+	move.l	d2,loadlen
+	rts
+
+	;----
+	; SuperHangOn
+	;
+	; Trackloader
+	;
+	; >a0 = target
+	; >a1 = file pointer
+	; d0> = file name 
+	; d1> = file size
 	
 loadfile
+	movem.l	d2-a6,-(sp)
+	
 	lea	$dff000,a6	;
 	lea	$bfd000,a5	; ciab
 	lea	$bfe001,a4	; ciaa
@@ -21,8 +52,6 @@ loadfile
 
 	;----
 
-	lea	target(pc),a0	
-	lea	filetable+48(pc),a1
 	moveq	#0,d0		;
 	moveq	#0,d1		;
 	move.b	4(a1),d0	; start track
@@ -32,15 +61,16 @@ loadfile
 	;----
 
 	jsr	track0(pc)	; go track 0
+
 	move.w	d0,d7		;
 	jsr	move(pc)	;
 
 	;----
 
-	lea	buffer(pc),a1	;
+	lea	buffer(pc),a2	;
 	mulu.w	#512,d1		;
-	lea	4(a1),a2	;
-	lea	4(a1,d1.l),a1	;
+	lea	4(a2),a3	;
+	lea	4(a2,d1.l),a2	;
 
 	move.w	#11*512,d7	;
 	sub.w	d1,d7		;
@@ -50,7 +80,7 @@ loadfile
 
 .load	jsr	load(pc)	; load track
 
-.loop	move.b	(a1)+,(a0)+	;
+.loop	move.b	(a2)+,(a0)+	;
 	subq.w	#1,d2		;
 	dble	d7,.loop	;	
 	
@@ -58,7 +88,7 @@ loadfile
 	beq.b	.done		; yes => leave
 	jsr	next(pc)	; no  => next track
 
-	move.l	a2,a1		;	
+	lea	(a3),a2		;	
 	move.w	#(11*512)-1,d7	;
 	bra.b	.load		;
 
@@ -69,7 +99,12 @@ loadfile
 	bclr.b	#3,$100(a5)	;
 	bset.b	#3,$100(a5)	;
 
-.quit	rts
+	;----
+
+.quit	move.l	(a1),d0		; return filename
+	move.w	6(a1),d1	; return filesize
+	movem.l	(sp)+,d2-a6	;
+	rts
 
 	;---- track 0
 
@@ -119,7 +154,7 @@ next	bclr.b	#0,$100(a5)	; step pulse
 delay	move.b	#%10000001,$d00(a4)
 	move.b	#%00001000,$e00(a4)
 	move.b	#$cc,$400(a4)
-	move.b	#$02,$500(a4)	; start timer (oneshoot)
+	move.b	#$3a,$500(a4)	; start timer (oneshoot)
 .wait	btst.b	#0,$d00(a4)
 	beq.b	.wait
 	rts
@@ -129,7 +164,6 @@ delay	move.b	#%10000001,$d00(a4)
 wordsync	EQU	$4489
 dmalen		EQU	5656
 decode		EQU	1
-decrypt		EQU	1
 checksum	EQU	1
 
 load	movem.l	d0-a2,-(sp)
@@ -152,7 +186,7 @@ load	movem.l	d0-a2,-(sp)
 
 	move.w	#$4000,$24(a6)
 
-	;---- decode track
+	;---- mfm decoder
 	
 mask	EQU	$5555
 
@@ -184,22 +218,6 @@ mask	EQU	$5555
 .wblt2	btst.b	#6,2(a6)
 	bne.b	.wblt2
 	
-	;---- decrypt
-	
-	lea	buffer(pc),a0	;
-	tst.w	(a0)		;
-	bne.w	.retry		;
-	
-	btst.b	#2,$100(a5)	; 
-	beq.b	.chksum		; decrypt only side 0
-
-	lea	4(a0),a0
-	move.l	#$12345678,d0
-	move.w	#(5640/4)-1-1,d7
-.loop1	eor.l	d0,(a0)
-	move.l	(a0)+,d0
-	dbf	d7,.loop1
-
 	;---- checksum
 	
 .chksum	lea	buffer+2(pc),a0	;
@@ -217,10 +235,18 @@ mask	EQU	$5555
 	movem.l	(sp)+,d0-a2
 	rts
 	
-	;----
+	;---- logs
+
+fname	ds.l	1
+fsize	ds.w	1
+loadlen	ds.l	1
+
+	;---- table
 
 filetable
-	incbin	/bin/filetable
+	incbin	/bin/shografx
+
+	;---- buffers
 	
 diskdata
 	ds.w	dmalen	
@@ -229,5 +255,6 @@ diskdata
 buffer	ds.w	705*4
 	dc.b	'tail'
 
-target	ds.b	$1878
+target	ds.b	160398
+	;ds.b	239616
 end	dc.b	'tail'	
