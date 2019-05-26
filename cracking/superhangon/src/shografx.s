@@ -1,5 +1,7 @@
 offset	SET	0
 
+	dc.b	'SHOgrafx'
+
 	;---- SOH data files
 
 	dc.b	'TUN1'

@@ -3,7 +3,7 @@
 	
 	;OPT	P+
 
-	include	startup.s
+	include	/src/startup.s
 
 trackloader
 	lea	$dff000,a6
