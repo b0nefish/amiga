@@ -1,25 +1,37 @@
+****************************************
+**             Super Hang On          ** 
+**              Disk Loader           **
+**        Compile with Devpac 2.15    **
+****************************************
 
-	SECTION	trackloader,CODE_C
+	SECTION	SHOLoader,CODE_C
 	
 	include	/src/startup.s
 
-	;----
+	;---- capture index
 
-ripper	lea	target(pc),a0	
-	lea	filetable+8+(0*8)(pc),a1
+rip1	lea	target(pc),a0
+	lea	index1(pc),a1
+	jsr	loadfile(pc)
+	rts
+
+	;---- capture files
+
+rip2	lea	target(pc),a0	
+	lea	index2+8+(0*8)(pc),a1
 	moveq	#0,d2
-	move.w	#20-1,d7
+	move.w	#20-1,d7	; nb files to load
 
-.loop	jsr	loadfile(pc)
-	lea	(a0,d1.w),a0
-	lea	8(a1),a1
-	andi.l	#$ffff,d1
-	add.l	d1,d2
-	move.l	d0,fname
-	move.w	d1,fsize
-	dbf	d7,.loop
+.loop	jsr	loadfile(pc)	;
+	lea	(a0,d1.w),a0	;
+	lea	8(a1),a1	;
+	andi.l	#$ffff,d1	;
+	add.l	d1,d2		;
+	move.l	d0,fname	;
+	move.w	d1,fsize	;
+	dbf	d7,.loop	;
 
-	move.l	d2,loadlen
+	move.l	d2,loadlen	;
 	rts
 
 	;----
@@ -243,8 +255,11 @@ loadlen	ds.l	1
 
 	;---- table
 
-filetable
-	incbin	/bin/shografx/table
+index1	dc.l	'INDX'
+	dc.b	1,0
+	dc.w	512
+
+index2	incbin	/bin/shografx/table
 
 	;---- buffers
 	

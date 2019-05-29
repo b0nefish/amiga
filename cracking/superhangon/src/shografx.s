@@ -1,4 +1,4 @@
-offset	SET	0
+offset	SET	$7a572
 
 	dc.b	'SHOgrafx'
 
