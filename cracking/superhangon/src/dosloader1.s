@@ -7,14 +7,10 @@
 
 	;----
 	
-	;lea	target,a0
-	;lea	table(pc),a1
-	;move.w	#$2c,d0
-	;mulu.w	#20,d0
-	;movem.l	(a1,d0.l),d0/d1	
-	;jsr	load(pc)
-	;move.l	d1,length
-	;rts
+	lea	target,a0
+	move.l	#'DSRT',d0	
+	jsr	load(pc)
+	rts
 
 	;---- 
 	; SuperHangOn
@@ -28,10 +24,10 @@
 load	movem.l	d1-a6,-(sp)	; backup registers
 
 	lea	files+8(pc),a1
-	move.w	#((512-8)/8)-1,d7
+	move.w	#((512-8)/12)-1,d7
 .srch	cmp.l	(a1)+,d0
 	beq.b	.found
-	lea	4(a1),a1
+	lea	8(a1),a1
 	dbf	d7,.srch
 	bra.w	.quit
 
@@ -99,7 +95,7 @@ load	movem.l	d1-a6,-(sp)	; backup registers
 	;---- load track
 
 wordsync	EQU	$4489
-gap		EQU	350
+gap		EQU	250
 readtracklen	EQU	((1088*11)/2)+gap
 
 .load	movem.l	a4/a5,-(sp)	;
@@ -264,5 +260,5 @@ files	include	/src/shografx.s	; files table
 rawdata	ds.w	readtracklen
 	dc.b	'sebo'
 
-target	ds.b	$2d16
+target	ds.b	$1878
 end	dc.b	'sebo'	
