@@ -1,4 +1,4 @@
-offset	SET	$7a572
+offset	SET	$70000
 
 	dc.b	'SHOgrafx'
 

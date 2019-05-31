@@ -1,4 +1,4 @@
-offset	SET	0
+offset	SET	$5800
 
 	dc.b	'SHO.boot'
 
