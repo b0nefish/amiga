@@ -95,7 +95,7 @@ load	movem.l	d1-a6,-(sp)	; backup registers
 	;---- load track
 
 wordsync	EQU	$4489
-gap		EQU	250
+gap		EQU	350
 readtracklen	EQU	((1088*11)/2)+gap
 
 .load	movem.l	a4/a5,-(sp)	;
